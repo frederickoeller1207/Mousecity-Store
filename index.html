@@ -2,176 +2,390 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maus-City Store</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      background: #f6f7f9;
-      padding: 16px;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
     }
-    h1 {
-      text-align: center;
-      margin-top: 0;
-      font-size: 22px;
-    }
-    .produktliste {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-    }
-    .produkt {
-      background: white;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      width: 44%;
-      box-sizing: border-box;
-    }
-    .produkt h3 {
-      margin: 0 0 6px;
-      font-size: 16px;
-    }
-    .produkt p {
-      font-size: 14px;
-      margin: 0 0 4px;
-    }
-    .produkt button {
-      width: 100%;
-      padding: 8px;
-      background: #ff9900;
+    header {
+      background: #232f3e;
       color: white;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    #admin-button {
+      background: none;
       border: none;
-      border-radius: 6px;
-      font-weight: bold;
+      color: white;
+      font-size: 20px;
       cursor: pointer;
     }
-    .overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.4);
+    .product-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+    }
+    .product {
+      background: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
       display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .product-name {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    .product-price {
+      color: #b12704;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .product-lieferzeit {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 10px;
+    }
+    .product button {
+      background: #ffa41c;
+      border: none;
+      padding: 10px;
+      font-weight: bold;
+      color: #111;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .overlay, .admin-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
       justify-content: center;
       align-items: center;
-      z-index: 999;
+      z-index: 1000;
     }
-    .fenster {
+    .modal, .admin-panel {
       background: white;
-      padding: 16px;
       border-radius: 8px;
-      max-width: 360px;
+      padding: 20px;
       width: 90%;
+      max-width: 400px;
+      max-height: 90%;
+      overflow-y: auto;
       position: relative;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
-    .fenster h2 {
+    .modal h2, .admin-panel h2 {
       margin-top: 0;
-      font-size: 18px;
     }
-    .fenster button {
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .konto-btn {
+      display: block;
+      padding: 10px;
+      background: #e7e7e7;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+    }
+    input, textarea {
+      width: 100%;
+      margin: 6px 0 12px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button.save-btn {
       background: #007aff;
       color: white;
-      border: none;
-      padding: 8px 12px;
+    }
+    .bestellung {
+      padding: 10px;
+      background: #f0f0f0;
+      margin-bottom: 6px;
       border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
-    .fenster input {
-      width: 100%;
-      padding: 8px;
-      margin: 10px 0;
-      font-size: 16px;
-    }
-    .x-btn {
-      position: absolute;
-      top: 6px;
-      right: 8px;
-      background: #ccc;
+    .bestellung button {
+      background: red;
+      color: white;
       border: none;
-      border-radius: 50%;
-      width: 26px;
-      height: 26px;
-      font-weight: bold;
+      border-radius: 4px;
+      padding: 2px 6px;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Willkommen im Maus-City Store</h1>
-  <div class="produktliste" id="produktliste"></div>
+  <header>
+    <h1>Maus-City Store</h1>
+    <button id="admin-button">a</button>
+  </header>
+  <div class="product-list" id="product-list"></div>
 
-  <div id="overlay" style="display:none;"></div>
+  <!-- Produkt-Overlay -->
+  <div class="overlay" id="product-overlay">
+    <div class="modal" id="product-modal">
+      <button class="close-btn" onclick="closeOverlay()">×</button>
+      <h2 id="modal-name"></h2>
+      <p class="product-price" id="modal-preis"></p>
+      <p class="product-lieferzeit" id="modal-lieferzeit"></p>
+      <p id="modal-beschreibung"></p>
+      <button onclick="startKauf()">Jetzt kaufen</button>
+    </div>
+  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+  <!-- Kontenauswahl -->
+  <div class="overlay" id="konto-overlay">
+    <div class="modal">
+      <button class="close-btn" onclick="closeOverlay()">×</button>
+      <h2>Bitte Benutzerkonto auswählen</h2>
+      <div id="konto-liste"></div>
+    </div>
+  </div>
 
-    const app1 = initializeApp({
-      apiKey: "AIzaSyAQaNKUa-RKvUcwlPpWnEyKxcVjYV6cZuU",
-      authDomain: "gesamt-dae4e.firebaseapp.com",
-      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app"
-    }, "gesamt");
+  <!-- Code-Eingabe -->
+  <div class="overlay" id="code-overlay">
+    <div class="modal">
+      <button class="close-btn" onclick="closeOverlay()">×</button>
+      <h2>Code eingeben</h2>
+      <input type="number" id="code-input" placeholder="Sicherheitscode" />
+      <button onclick="kaufBestaetigen()">Kaufen</button>
+    </div>
+  </div>
 
-    const app2 = initializeApp({
-      apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
-      authDomain: "punkte-45c20.firebaseapp.com",
-      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
-    }, "punkte");
+  <!-- Adminbereich -->
+  <div class="admin-overlay" id="admin-overlay">
+    <div class="admin-panel">
+      <button class="close-btn" onclick="document.getElementById('admin-overlay').style.display='none'">×</button>
+      <h2>🛒 Admin-Bereich</h2>
+      <div id="bestellübersicht"></div>
+      <hr/>
+      <input id="artikel-id" type="text" placeholder="(Nur beim Bearbeiten)" />
+      <input id="artikel-name" type="text" placeholder="Produktname" />
+      <input id="artikel-preis" type="number" placeholder="Preis in Mausdollar" />
+      <input id="artikel-lieferzeit" type="text" placeholder="Lieferzeit z. B. '2–3 Tage'" />
+      <textarea id="artikel-beschreibung" placeholder="Beschreibung" rows="3"></textarea>
+      <button class="save-btn" onclick="speichern()">Speichern</button>
+      <h3>Produkte</h3>
+      <div id="artikel-liste"></div>
+    </div>
+  </div>
 
-    const db1 = getDatabase(app1);
-    const db2 = getDatabase(app2);
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+  import {
+    getDatabase, ref, onValue, set, remove, get, child
+  } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
-    const produktliste = document.getElementById("produktliste");
-    const overlay = document.getElementById("overlay");
+  const app = initializeApp({
+    apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
+    authDomain: "punkte-45c20.firebaseapp.com",
+    databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "punkte-45c20"
+  });
 
-    const zeigeProdukte = () => {
-      const shopRef = ref(db2, "shopartikel");
-      onValue(shopRef, snap => {
-        produktliste.innerHTML = "";
-        snap.forEach(child => {
-          const art = child.val();
-          const id = child.key;
-          const box = document.createElement("div");
-          box.className = "produkt";
-          box.innerHTML = `
-            <h3>${art.name}</h3>
-            <p>${art.preis} Mausdollar</p>
-            <p>${art.lieferzeit || "Lieferzeit unbekannt"}</p>
-            <button onclick="zeigeProdukt('${id}')">Jetzt kaufen</button>
-          `;
-          produktliste.appendChild(box);
-        });
+  const db = getDatabase(app);
+  const punkteRef = ref(db, "kinder");
+  const auslandRef = ref(db, "auslandskonten");
+  const shopRef = ref(db, "shopartikel");
+  const bestellungenRef = ref(db, "bestellungen");
+
+  let aktuellesProdukt = null;
+  let aktuellesKind = null;
+
+  const produktContainer = document.getElementById("product-list");
+
+  function renderProdukte() {
+    onValue(shopRef, snap => {
+      produktContainer.innerHTML = "";
+      const produkte = [];
+      snap.forEach(child => produkte.push({ id: child.key, ...child.val() }));
+      produkte.sort((a, b) => a.preis - b.preis);
+      produkte.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `
+          <div class="product-name">${p.name}</div>
+          <div class="product-price">${p.preis} Mausdollar</div>
+          <div class="product-lieferzeit">${p.lieferzeit || ""}</div>
+          <button onclick='showProdukt(${JSON.stringify(p)})'>Ansehen</button>
+        `;
+        produktContainer.appendChild(div);
+      });
+    });
+  }
+
+  window.showProdukt = (produkt) => {
+    aktuellesProdukt = produkt;
+    document.getElementById("modal-name").innerText = produkt.name;
+    document.getElementById("modal-preis").innerText = `${produkt.preis} Mausdollar`;
+    document.getElementById("modal-lieferzeit").innerText = produkt.lieferzeit || "";
+    document.getElementById("modal-beschreibung").innerText = produkt.beschreibung || "";
+    document.getElementById("product-overlay").style.display = "flex";
+  };
+
+  window.closeOverlay = () => {
+    document.querySelectorAll(".overlay").forEach(el => el.style.display = "none");
+  };
+
+  window.startKauf = () => {
+    closeOverlay();
+    document.getElementById("konto-overlay").style.display = "flex";
+    const liste = document.getElementById("konto-liste");
+    liste.innerHTML = "";
+    const anzeigen = (snap) => {
+      snap.forEach(child => {
+        const name = child.key;
+        const konto = document.createElement("div");
+        konto.className = "konto-btn";
+        konto.innerText = name;
+        konto.onclick = () => {
+          aktuellesKind = name;
+          closeOverlay();
+          document.getElementById("code-overlay").style.display = "flex";
+        };
+        liste.appendChild(konto);
       });
     };
+    onValue(punkteRef, anzeigen, { onlyOnce: true });
+    onValue(auslandRef, anzeigen, { onlyOnce: true });
+  };
 
-    window.zeigeProdukt = async (id) => {
-      const snap = await get(ref(db2, `shopartikel/${id}`));
-      if (!snap.exists()) return;
-      const art = snap.val();
-      overlay.innerHTML = `
-        <div class="overlay">
-          <div class="fenster">
-            <button class="x-btn" onclick="window.schließeOverlay()">x</button>
-            <h2>${art.name}</h2>
-            <p>${art.beschreibung || ""}</p>
-            <p><strong>Lieferzeit:</strong> ${art.lieferzeit || "?"}</p>
-            <p><strong>Preis:</strong> ${art.preis} Mausdollar</p>
-            <button onclick="window.wähleKonto('${id}')">Jetzt kaufen</button>
-          </div>
+  window.kaufBestaetigen = async () => {
+    const code = document.getElementById("code-input").value.trim();
+    if (!code) return alert("Bitte Code eingeben");
+
+    const codeSnap = await get(ref(db, "kinder/" + aktuellesKind + "/code"));
+    const auslSnap = await get(ref(db, "auslandskonten/" + aktuellesKind + "/code"));
+
+    const richtigerCode = codeSnap.exists() ? codeSnap.val() : auslSnap.exists() ? auslSnap.val() : null;
+
+    if (code != richtigerCode) return alert("Falscher Code");
+
+    const punktSnap = await get(ref(db, "kinder/" + aktuellesKind + "/punkte"));
+    const auslPunkte = await get(ref(db, "auslandskonten/" + aktuellesKind + "/punkte"));
+    const punkte = punktSnap.exists() ? punktSnap.val() : auslPunkte.exists() ? auslPunkte.val() : 0;
+
+    if (punkte < aktuellesProdukt.preis) {
+      alert("Du hast leider zu wenig Mausdollar.");
+      return closeOverlay();
+    }
+
+    const ziel = punktSnap.exists()
+      ? ref(db, "kinder/" + aktuellesKind + "/punkte")
+      : ref(db, "auslandskonten/" + aktuellesKind + "/punkte");
+
+    await set(ziel, punkte - aktuellesProdukt.preis);
+    await set(ref(db, "bestellungen/" + Date.now()), {
+      name: aktuellesKind,
+      artikel: aktuellesProdukt.name,
+      lieferzeit: aktuellesProdukt.lieferzeit || ""
+    });
+
+    alert(`Erfolgreich bestellt. Voraussichtliche Lieferung: ${aktuellesProdukt.lieferzeit || "bald"}`);
+    closeOverlay();
+  };
+
+  // Admin-Login
+  document.getElementById("admin-button").onclick = () => {
+    const code = prompt("Admin-Code:");
+    if (code === "121071") {
+      document.getElementById("admin-overlay").style.display = "flex";
+    }
+  };
+
+  const artikelListe = document.getElementById("artikel-liste");
+  const bestellübersicht = document.getElementById("bestellübersicht");
+
+  onValue(shopRef, snap => {
+    artikelListe.innerHTML = "";
+    snap.forEach(child => {
+      const art = child.val();
+      const div = document.createElement("div");
+      div.className = "product";
+      div.innerHTML = `
+        <div>
+          <strong>${art.name}</strong><br/>
+          ${art.preis} Mausdollar – ${art.lieferzeit || "keine Angabe"}
         </div>
+        <button onclick="bearbeiten('${child.key}', '${art.name}', '${art.preis}', '${art.lieferzeit || ""}', \`${art.beschreibung || ""}\`)">✏️</button>
+        <button onclick="remove(ref(db, 'shopartikel/${child.key}'))">x</button>
       `;
-      overlay.style.display = "flex";
-    };
+      artikelListe.appendChild(div);
+    });
+  });
 
-    window.schließeOverlay = () => {
-      overlay.innerHTML = "";
-      overlay.style.display = "none";
-    };
+  onValue(bestellungenRef, snap => {
+    bestellübersicht.innerHTML = "";
+    snap.forEach(child => {
+      const b = child.val();
+      const div = document.createElement("div");
+      div.className = "bestellung";
+      div.innerHTML = `
+        <div><strong>${b.name}</strong> hat <em>${b.artikel}</em> bestellt<br/><small>${b.lieferzeit || "Lieferzeit unbekannt"}</small></div>
+        <button onclick="remove(ref(db, 'bestellungen/${child.key}'))">x</button>
+      `;
+      bestellübersicht.appendChild(div);
+    });
+  });
 
-    // Fortsetzung folgt in Teil 2 …
-  </script>
+  window.speichern = () => {
+    const id = document.getElementById("artikel-id").value.trim() || Date.now();
+    const name = document.getElementById("artikel-name").value.trim();
+    const preis = parseInt(document.getElementById("artikel-preis").value);
+    const lieferzeit = document.getElementById("artikel-lieferzeit").value.trim();
+    const beschreibung = document.getElementById("artikel-beschreibung").value.trim();
+
+    if (!name || isNaN(preis)) {
+      alert("Name und Preis sind Pflicht.");
+      return;
+    }
+
+    set(ref(db, "shopartikel/" + id), {
+      name, preis, lieferzeit, beschreibung
+    });
+
+    document.getElementById("artikel-id").value = "";
+    document.getElementById("artikel-name").value = "";
+    document.getElementById("artikel-preis").value = "";
+    document.getElementById("artikel-lieferzeit").value = "";
+    document.getElementById("artikel-beschreibung").value = "";
+  };
+
+  window.bearbeiten = (id, name, preis, lieferzeit, beschreibung) => {
+    document.getElementById("artikel-id").value = id;
+    document.getElementById("artikel-name").value = name;
+    document.getElementById("artikel-preis").value = preis;
+    document.getElementById("artikel-lieferzeit").value = lieferzeit;
+    document.getElementById("artikel-beschreibung").value = beschreibung;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  renderProdukte();
+</script>
 </body>
 </html>
