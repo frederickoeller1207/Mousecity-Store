@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Willkommen im Maus-City Store</title>
+    <title>Willkommen im Mousecity Store</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -24,17 +24,7 @@
         header h1 {
             margin: 0;
             font-size: 1.2em;
-        }
-
-        #admin-login-button {
-            background: none;
-            border: 1px solid white;
-            color: white;
-            font-weight: bold;
-            font-size: 1em;
-            padding: 5px 10px;
-            cursor: pointer;
-            border-radius: 5px;
+            cursor: pointer; /* Macht den H1-Titel klickbar */
         }
 
         main {
@@ -77,6 +67,31 @@
             margin-top: 5px;
             color: #555;
             font-size: 0.8em;
+        }
+
+        .out-of-stock {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .out-of-stock::after {
+            content: "Momentan nicht verfügbar";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-weight: bold;
+            font-size: 1.2em;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        .out-of-stock h3 {
+            text-decoration: line-through;
         }
 
         .overlay {
@@ -131,6 +146,14 @@
             margin-top: 15px;
         }
 
+        #account-list-container {
+            max-height: 200px; /* Höhe für Scroll-Funktion */
+            overflow-y: auto; /* Aktiviert das Scrollen */
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
         #account-list button {
             display: block;
             width: 100%;
@@ -170,8 +193,7 @@
 <body>
 
     <header>
-        <h1>Willkommen im Maus-City Store</h1>
-        <button id="admin-login-button">a</button>
+        <h1 id="store-title">Willkommen im Mousecity Store</h1>
     </header>
 
     <main id="product-grid"></main>
@@ -183,6 +205,7 @@
             <p id="product-description"></p>
             <p id="product-price"></p>
             <p id="product-delivery"></p>
+            <small id="product-stock"></small>
             <button id="buy-button">Jetzt kaufen</button>
         </div>
     </div>
@@ -190,8 +213,10 @@
     <div id="account-select-overlay" class="overlay hidden">
         <div class="overlay-content">
             <button class="close-overlay">×</button>
-            <h2>Bitte Benutzerkonto auswählen</h2>
-            <div id="account-list"></div>
+            <h2>Benutzerkonto auswählen:</h2>
+            <div id="account-list-container">
+                <div id="account-list"></div>
+            </div>
         </div>
     </div>
 
@@ -239,8 +264,8 @@
         const dbGesamt = appGesamt.database();
 
         // Shop-Logik
+        const storeTitle = document.getElementById('store-title');
         const productGrid = document.getElementById('product-grid');
-        const adminLoginButton = document.getElementById('admin-login-button');
         const productOverlay = document.getElementById('product-overlay');
         const accountSelectOverlay = document.getElementById('account-select-overlay');
         const codeEntryOverlay = document.getElementById('code-entry-overlay');
@@ -250,6 +275,7 @@
         const productDescriptionElement = document.getElementById('product-description');
         const productPriceElement = document.getElementById('product-price');
         const productDeliveryElement = document.getElementById('product-delivery');
+        const productStockElement = document.getElementById('product-stock');
         const buyButton = document.getElementById('buy-button');
         const accountList = document.getElementById('account-list');
         const securityCodeInput = document.getElementById('security-code-input');
@@ -272,6 +298,24 @@
             button.addEventListener('click', hideAllOverlays);
         });
 
+        // Admin-Login über den Titel
+        storeTitle.addEventListener('click', (e) => {
+            if (e.target.innerText.includes('im')) { // Klick auf "im" im Titel
+                adminCodeOverlay.classList.remove('hidden');
+            }
+        });
+
+        adminLoginConfirmButton.addEventListener('click', () => {
+            const enteredAdminCode = adminCodeInput.value;
+            const adminCode = '121071';
+            if (enteredAdminCode === adminCode) {
+                window.location.href = 'admin.html';
+            } else {
+                alert('Falscher Admin-Code.');
+                adminCodeInput.value = '';
+            }
+        });
+
         const loadProducts = () => {
             const productsRef = dbPunkte.ref('shopartikel');
             productsRef.orderByChild('preis').on('value', (snapshot) => {
@@ -282,14 +326,19 @@
                         const product = products[key];
                         const productItem = document.createElement('div');
                         productItem.className = 'product-item';
+                        if (product.stock <= 0) {
+                            productItem.classList.add('out-of-stock');
+                        }
                         productItem.innerHTML = `
                             <h3>${product.name}</h3>
                             <p>${product.preis} Mausdollar</p>
-                            <small>${product.lieferzeit || 'Lieferzeit unbekannt'}</small>
+                            <small>Verfügbar: ${product.stock || 0}</small>
                         `;
                         productItem.addEventListener('click', () => {
-                            selectedProduct = { id: key, ...product };
-                            showProductOverlay(selectedProduct);
+                            if (product.stock > 0) {
+                                selectedProduct = { id: key, ...product };
+                                showProductOverlay(selectedProduct);
+                            }
                         });
                         productGrid.appendChild(productItem);
                     });
@@ -302,6 +351,16 @@
             productDescriptionElement.textContent = product.beschreibung || 'Keine Beschreibung vorhanden.';
             productPriceElement.textContent = `${product.preis} Mausdollar`;
             productDeliveryElement.textContent = product.lieferzeit ? `Lieferzeit: ${product.lieferzeit}` : '';
+            productStockElement.textContent = `Verfügbar: ${product.stock}`;
+
+            if (product.stock > 0) {
+                buyButton.disabled = false;
+                buyButton.textContent = 'Jetzt kaufen';
+            } else {
+                buyButton.disabled = true;
+                buyButton.textContent = 'Momentan nicht verfügbar';
+            }
+
             productOverlay.classList.remove('hidden');
         };
 
@@ -321,23 +380,25 @@
                     const kinder = kinderSnapshot.val();
                     if (kinder) {
                         Object.keys(kinder).forEach(name => {
-                            accounts[name] = kinder[name];
+                            accounts[name] = { ...kinder[name], type: 'kinder' };
                         });
                     }
                     const auslandskonten = auslandskontenSnapshot.val();
                     if (auslandskonten) {
                         Object.keys(auslandskonten).forEach(name => {
-                            accounts[name] = auslandskonten[name];
+                            accounts[name] = { ...auslandskonten[name], type: 'auslandskonten' };
                         });
                     }
 
-                    if (Object.keys(accounts).length > 0) {
-                        Object.keys(accounts).forEach(name => {
+                    const sortedAccountNames = Object.keys(accounts).sort();
+
+                    if (sortedAccountNames.length > 0) {
+                        sortedAccountNames.forEach(name => {
                             const account = accounts[name];
                             const accountButton = document.createElement('button');
                             accountButton.textContent = `${name} (${account.punkte} Mausdollar)`;
                             accountButton.addEventListener('click', () => {
-                                selectedUser = { name: name, punkte: account.punkte, type: kinder && kinder[name] ? 'kinder' : 'auslandskonten' };
+                                selectedUser = { name: name, punkte: account.punkte, type: account.type };
                                 accountSelectOverlay.classList.add('hidden');
                                 codeEntryOverlay.classList.remove('hidden');
                             });
@@ -367,49 +428,17 @@
                 if (enteredCode === correctCode) {
                     if (selectedUser.punkte >= selectedProduct.preis) {
                         const newPoints = selectedUser.punkte - selectedProduct.preis;
-                        const pointsRef = dbPunkte.ref(`${selectedUser.type}/${selectedUser.name}/punkte`);
-                        pointsRef.set(newPoints)
+                        const newStock = selectedProduct.stock - 1;
+
+                        // Transaktionslogik für Punkte und Bestand
+                        const updates = {};
+                        updates[`${selectedUser.type}/${selectedUser.name}/punkte`] = newPoints;
+                        updates[`shopartikel/${selectedProduct.id}/stock`] = newStock;
+                        
+                        dbPunkte.ref().update(updates)
                             .then(() => {
                                 const newOrderRef = dbPunkte.ref('bestellungen').push();
                                 newOrderRef.set({
                                     name: selectedUser.name,
                                     artikel: selectedProduct.name,
-                                    lieferzeit: selectedProduct.lieferzeit
-                                }).then(() => {
-                                    codeEntryOverlay.classList.add('hidden');
-                                    successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;
-                                    successOverlay.classList.remove('hidden');
-                                });
-                            })
-                            .catch(error => {
-                                console.error("Fehler beim Kauf:", error);
-                                errorMessage.textContent = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
-                            });
-                    } else {
-                        errorMessage.textContent = 'Zu wenige Punkte für diesen Kauf.';
-                    }
-                } else {
-                    errorMessage.textContent = 'Falscher Sicherheitscode.';
-                }
-            });
-        });
-
-        adminLoginButton.addEventListener('click', () => {
-            adminCodeOverlay.classList.remove('hidden');
-        });
-
-        adminLoginConfirmButton.addEventListener('click', () => {
-            const enteredAdminCode = adminCodeInput.value;
-            const adminCode = '121071';
-            if (enteredAdminCode === adminCode) {
-                window.location.href = 'admin.html';
-            } else {
-                alert('Falscher Admin-Code.');
-                adminCodeInput.value = '';
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', loadProducts);
-    </script>
-</body>
-</html>
+                                    lieferzeit: selected
