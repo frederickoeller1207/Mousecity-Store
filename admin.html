@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maus-City Admin</title>
+    <title>Mousecity Admin</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -104,7 +104,7 @@
 <body>
 
     <header>
-        <h1>Maus-City Admin-Backend</h1>
+        <h1>Mousecity Admin-Backend</h1>
         <a href="index.html" class="back-link">← Zurück zum Shop</a>
     </header>
 
@@ -122,6 +122,7 @@
                 <input type="hidden" id="product-id">
                 <input type="text" id="product-name-input" placeholder="Produktname" required>
                 <input type="number" id="product-price-input" placeholder="Preis (Mausdollar)" required>
+                <input type="number" id="product-stock-input" placeholder="Bestand (Anzahl)" required>
                 <input type="text" id="product-delivery-input" placeholder="Lieferzeit" required>
                 <textarea id="product-description-input" placeholder="Beschreibung (optional)"></textarea>
                 <button id="save-product-button">Produkt hinzufügen</button>
@@ -146,6 +147,7 @@
         const productIdInput = document.getElementById('product-id');
         const productNameInput = document.getElementById('product-name-input');
         const productPriceInput = document.getElementById('product-price-input');
+        const productStockInput = document.getElementById('product-stock-input');
         const productDeliveryInput = document.getElementById('product-delivery-input');
         const productDescriptionInput = document.getElementById('product-description-input');
 
@@ -189,10 +191,10 @@
                         const li = document.createElement('li');
                         li.innerHTML = `
                             <span>
-                                <strong>${product.name}</strong> - ${product.preis} Mausdollar
+                                <strong>${product.name}</strong> - ${product.preis} Mausdollar (Bestand: ${product.stock || 0})
                             </span>
                             <div>
-                                <button class="edit-btn" data-id="${key}" data-name="${product.name}" data-price="${product.preis}" data-delivery="${product.lieferzeit}" data-description="${product.beschreibung}">✏️</button>
+                                <button class="edit-btn" data-id="${key}" data-name="${product.name}" data-price="${product.preis}" data-stock="${product.stock || 0}" data-delivery="${product.lieferzeit}" data-description="${product.beschreibung}">✏️</button>
                                 <button class="delete-btn" data-id="${key}">x</button>
                             </div>
                         `;
@@ -205,20 +207,21 @@
         saveProductButton.addEventListener('click', () => {
             const name = productNameInput.value;
             const price = parseInt(productPriceInput.value);
+            const stock = parseInt(productStockInput.value);
             const delivery = productDeliveryInput.value;
             const description = productDescriptionInput.value;
             const productId = productIdInput.value;
 
-            if (!name || isNaN(price) || !delivery) {
-                alert('Name, Preis und Lieferzeit sind erforderlich!');
+            if (!name || isNaN(price) || isNaN(stock) || !delivery) {
+                alert('Name, Preis, Bestand und Lieferzeit sind erforderlich!');
                 return;
             }
 
-            const productData = { name, preis: price, lieferzeit: delivery, beschreibung: description };
+            const productData = { name, preis: price, stock: stock, lieferzeit: delivery, beschreibung: description };
             const productsRef = dbPunkte.ref('shopartikel');
 
             if (productId) {
-                productsRef.child(productId).set(productData);
+                productsRef.child(productId).update(productData); // update statt set, um nur geänderte Felder zu aktualisieren
                 alert('Produkt aktualisiert!');
             } else {
                 productsRef.push(productData);
@@ -228,6 +231,7 @@
             productIdInput.value = '';
             productNameInput.value = '';
             productPriceInput.value = '';
+            productStockInput.value = '';
             productDeliveryInput.value = '';
             productDescriptionInput.value = '';
             saveProductButton.textContent = 'Produkt hinzufügen';
@@ -242,6 +246,7 @@
                 productIdInput.value = productId;
                 productNameInput.value = e.target.dataset.name;
                 productPriceInput.value = e.target.dataset.price;
+                productStockInput.value = e.target.dataset.stock;
                 productDeliveryInput.value = e.target.dataset.delivery;
                 productDescriptionInput.value = e.target.dataset.description;
                 saveProductButton.textContent = 'Produkt aktualisieren';
