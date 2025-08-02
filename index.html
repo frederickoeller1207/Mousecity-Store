@@ -171,3 +171,144 @@
       <p id="confirmation"></p>
     </div>
   </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
+    import { getDatabase, ref, get, onValue, set } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+
+    const app1 = initializeApp({
+      apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
+      authDomain: "punkte-45c20.firebaseapp.com",
+      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "punkte-45c20",
+      storageBucket: "punkte-45c20.appspot.com",
+      messagingSenderId: "931713539549",
+      appId: "1:931713539549:web:e348bf38369639f1906a34"
+    }, "app1");
+    const db1 = getDatabase(app1);
+
+    const app2 = initializeApp({
+      apiKey: "AIzaSyAQaNKUa-RKvUcwlPpWnEyKxcVjYV6cZuU",
+      authDomain: "gesamt-dae4e.firebaseapp.com",
+      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "gesamt-dae4e",
+      storageBucket: "gesamt-dae4e.appspot.com",
+      messagingSenderId: "844023612743",
+      appId: "1:844023612743:web:0821aa894541f89a7df862"
+    }, "app2");
+    const db2 = getDatabase(app2);
+
+    let selectedProduct = null;
+    let selectedUser = null;
+
+    const productList = document.getElementById("product-list");
+    const overlay = document.getElementById("product-overlay");
+    const userOverlay = document.getElementById("user-overlay");
+    const codeOverlay = document.getElementById("code-overlay");
+    const confirmationOverlay = document.getElementById("confirmation-overlay");
+
+    function closeOverlay() {
+      overlay.style.display = "none";
+      selectedProduct = null;
+    }
+
+    function closeUserSelect() {
+      userOverlay.style.display = "none";
+    }
+
+    function closeCodeOverlay() {
+      codeOverlay.style.display = "none";
+    }
+
+    function closeConfirmation() {
+      confirmationOverlay.style.display = "none";
+    }
+
+    function showUserSelect() {
+      if (!selectedProduct) return;
+      const userList = document.getElementById("user-list");
+      userList.innerHTML = "";
+      onValue(ref(db1, "kinder"), snapshot => {
+        snapshot.forEach(child => {
+          const name = child.key;
+          const div = document.createElement("div");
+          div.textContent = name;
+          div.className = "user-item";
+          div.onclick = () => {
+            selectedUser = name;
+            userOverlay.style.display = "none";
+            codeOverlay.style.display = "flex";
+          };
+          userList.appendChild(div);
+        });
+        userOverlay.style.display = "flex";
+      }, { onlyOnce: true });
+    }
+
+    window.finalizePurchase = async function () {
+      const code = document.getElementById("code-input").value.trim();
+      if (!selectedUser || !selectedProduct || code.length !== 3) return;
+      const codeSnap = await get(ref(db2, "kinder/" + selectedUser));
+      if (!codeSnap.exists() || codeSnap.val().code !== code) {
+        alert("Code falsch!");
+        return;
+      }
+
+      const userSnap = await get(ref(db1, "kinder/" + selectedUser));
+      const user = userSnap.val();
+      if (!user || user.punkte < selectedProduct.preis) {
+        alert("Du hast leider zu wenig Mausdollar.");
+        return;
+      }
+
+      await set(ref(db1, "kinder/" + selectedUser + "/punkte"), user.punkte - selectedProduct.preis);
+      const bestellRef = ref(db1, "bestellungen/" + Date.now());
+      await set(bestellRef, {
+        name: selectedUser,
+        produkt: selectedProduct.name,
+        lieferzeit: selectedProduct.lieferzeit
+      });
+
+      codeOverlay.style.display = "none";
+      document.getElementById("confirmation").textContent = "Voraussichtliche Lieferung: " + selectedProduct.lieferzeit;
+      confirmationOverlay.style.display = "flex";
+    }
+
+    onValue(ref(db1, "shopartikel"), snapshot => {
+      productList.innerHTML = "";
+      snapshot.forEach(child => {
+        const data = child.val();
+        const card = document.createElement("div");
+        card.className = "product-card";
+        card.innerHTML = `
+          <h3>${data.name}</h3>
+          <p>${data.preis} Mausdollar</p>
+          <p>${data.lieferzeit}</p>
+        `;
+        card.onclick = () => {
+          selectedProduct = {
+            name: data.name,
+            preis: data.preis,
+            beschreibung: data.beschreibung || "",
+            lieferzeit: data.lieferzeit || ""
+          };
+          document.getElementById("detail-name").textContent = selectedProduct.name;
+          document.getElementById("detail-description").textContent = selectedProduct.beschreibung;
+          document.getElementById("detail-lieferzeit").textContent = "Lieferzeit: " + selectedProduct.lieferzeit;
+          document.getElementById("detail-preis").textContent = "Preis: " + selectedProduct.preis + " Mausdollar";
+          overlay.style.display = "flex";
+        };
+        productList.appendChild(card);
+      });
+    });
+
+    document.getElementById("admin-btn").onclick = () => {
+      const code = prompt("Admin Code?");
+      if (code === "121071") {
+        window.location.href = "admin.html";
+      } else {
+        alert("Falsch!");
+      }
+    };
+  </script>
+</body>
+</html>
