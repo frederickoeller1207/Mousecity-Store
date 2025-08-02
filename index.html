@@ -24,7 +24,17 @@
         header h1 {
             margin: 0;
             font-size: 1.2em;
-            cursor: pointer; /* Macht den H1-Titel klickbar */
+        }
+
+        #admin-login-button {
+            background: none;
+            border: 1px solid white;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
         }
 
         main {
@@ -67,31 +77,6 @@
             margin-top: 5px;
             color: #555;
             font-size: 0.8em;
-        }
-
-        .out-of-stock {
-            opacity: 0.6;
-            pointer-events: none;
-            position: relative;
-        }
-
-        .out-of-stock::after {
-            content: "Momentan nicht verfügbar";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: red;
-            font-weight: bold;
-            font-size: 1.2em;
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 5px 10px;
-            border-radius: 5px;
-            white-space: nowrap;
-        }
-
-        .out-of-stock h3 {
-            text-decoration: line-through;
         }
 
         .overlay {
@@ -147,8 +132,8 @@
         }
 
         #account-list-container {
-            max-height: 200px; /* Höhe für Scroll-Funktion */
-            overflow-y: auto; /* Aktiviert das Scrollen */
+            max-height: 200px;
+            overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 10px;
@@ -186,6 +171,31 @@
                 grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             }
         }
+        
+        .out-of-stock {
+            opacity: 0.6;
+            pointer-events: none;
+            position: relative;
+        }
+
+        .out-of-stock::after {
+            content: "Momentan nicht verfügbar";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-weight: bold;
+            font-size: 1.2em;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            white-space: nowrap;
+        }
+
+        .out-of-stock h3 {
+            text-decoration: line-through;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -194,7 +204,7 @@
 
     <header>
         <h1 id="store-title">Willkommen im Mousecity Store</h1>
-    </header>
+        <button id="admin-login-button" style="display: none;">a</button> </header>
 
     <main id="product-grid"></main>
 
@@ -266,6 +276,7 @@
         // Shop-Logik
         const storeTitle = document.getElementById('store-title');
         const productGrid = document.getElementById('product-grid');
+        const adminLoginButton = document.getElementById('admin-login-button'); // Muss im JS bleiben
         const productOverlay = document.getElementById('product-overlay');
         const accountSelectOverlay = document.getElementById('account-select-overlay');
         const codeEntryOverlay = document.getElementById('code-entry-overlay');
@@ -300,11 +311,15 @@
 
         // Admin-Login über den Titel
         storeTitle.addEventListener('click', (e) => {
-            if (e.target.innerText.includes('im')) { // Klick auf "im" im Titel
+            // Nur der Klick auf "im" öffnet das Overlay
+            if (e.target.innerText.includes('im')) {
                 adminCodeOverlay.classList.remove('hidden');
             }
         });
-
+        
+        // Der ursprüngliche Admin-Login-Button wurde nur ausgeblendet
+        // Da er aber komplett entfernt werden soll, hier nur das, was für den neuen Login nötig ist
+        
         adminLoginConfirmButton.addEventListener('click', () => {
             const enteredAdminCode = adminCodeInput.value;
             const adminCode = '121071';
@@ -326,15 +341,20 @@
                         const product = products[key];
                         const productItem = document.createElement('div');
                         productItem.className = 'product-item';
+
+                        // Bestandsanzeige und Stiländerung
                         if (product.stock <= 0) {
                             productItem.classList.add('out-of-stock');
                         }
+
                         productItem.innerHTML = `
                             <h3>${product.name}</h3>
                             <p>${product.preis} Mausdollar</p>
                             <small>Verfügbar: ${product.stock || 0}</small>
                         `;
+
                         productItem.addEventListener('click', () => {
+                            // Kauf nur möglich, wenn Bestand > 0
                             if (product.stock > 0) {
                                 selectedProduct = { id: key, ...product };
                                 showProductOverlay(selectedProduct);
@@ -389,7 +409,8 @@
                             accounts[name] = { ...auslandskonten[name], type: 'auslandskonten' };
                         });
                     }
-
+                    
+                    // Alphabetische Sortierung
                     const sortedAccountNames = Object.keys(accounts).sort();
 
                     if (sortedAccountNames.length > 0) {
@@ -430,7 +451,7 @@
                         const newPoints = selectedUser.punkte - selectedProduct.preis;
                         const newStock = selectedProduct.stock - 1;
 
-                        // Transaktionslogik für Punkte und Bestand
+                        // Punkte und Bestand in einer Transaktion aktualisieren
                         const updates = {};
                         updates[`${selectedUser.type}/${selectedUser.name}/punkte`] = newPoints;
                         updates[`shopartikel/${selectedProduct.id}/stock`] = newStock;
@@ -441,4 +462,27 @@
                                 newOrderRef.set({
                                     name: selectedUser.name,
                                     artikel: selectedProduct.name,
-                                    lieferzeit: selected
+                                    lieferzeit: selectedProduct.lieferzeit
+                                }).then(() => {
+                                    codeEntryOverlay.classList.add('hidden');
+                                    successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;
+                                    successOverlay.classList.remove('hidden');
+                                });
+                            })
+                            .catch(error => {
+                                console.error("Fehler beim Kauf:", error);
+                                errorMessage.textContent = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+                            });
+                    } else {
+                        errorMessage.textContent = 'Zu wenige Punkte für diesen Kauf.';
+                    }
+                } else {
+                    errorMessage.textContent = 'Falscher Sicherheitscode.';
+                }
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+</html>
