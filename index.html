@@ -2,298 +2,277 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Maus-City Store</title>
+  <title>Willkommen im Maus-City Store</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: Arial, sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f4f4f4;
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
     }
     header {
+      padding: 10px 16px;
       background: #232f3e;
       color: white;
-      padding: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     header h1 {
-      font-size: 20px;
       margin: 0;
+      font-size: 20px;
     }
-    #admin-btn {
-      background: transparent;
+    header button {
+      background: none;
       border: none;
       color: white;
-      font-size: 18px;
+      font-size: 20px;
       cursor: pointer;
     }
-    .products {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    .grid {
+      display: flex;
+      flex-wrap: wrap;
       gap: 12px;
       padding: 16px;
+      justify-content: center;
     }
     .product {
       background: white;
-      padding: 12px;
       border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 12px;
+      width: calc(50% - 20px);
+      box-sizing: border-box;
       cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
     }
     .product h3 {
-      margin: 8px 0 4px;
+      margin: 0 0 8px;
       font-size: 16px;
     }
-    .product p {
-      margin: 0;
-      font-size: 14px;
-    }
-    .overlay {
+    .overlay, .select-user, .enter-code {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.6);
-      display: flex;
-      align-items: center;
+      display: none;
       justify-content: center;
+      align-items: center;
       z-index: 10;
     }
     .overlay-content {
       background: white;
       padding: 20px;
-      border-radius: 12px;
-      max-width: 320px;
-      width: 90%;
+      max-width: 300px;
+      width: 100%;
+      border-radius: 10px;
       position: relative;
     }
     .overlay-content h2 {
       margin-top: 0;
     }
-    .overlay-content button {
-      margin-top: 12px;
-      padding: 10px;
-      background: #ff9900;
-      color: white;
-      border: none;
-      width: 100%;
-      font-size: 16px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .overlay-content .close-btn {
+    .overlay-content button.close {
       position: absolute;
-      top: 8px;
-      right: 12px;
-      font-size: 20px;
+      right: 10px;
+      top: 10px;
       background: none;
       border: none;
+      font-size: 20px;
       cursor: pointer;
     }
-    .select-box {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .select-box button {
-      background: #007aff;
-      color: white;
+    .user-list button, .buy-button {
+      display: block;
+      margin: 8px auto;
+      padding: 8px 12px;
+      background: #ff9900;
       border: none;
-      padding: 10px;
-      border-radius: 6px;
+      border-radius: 5px;
       cursor: pointer;
+      font-size: 16px;
+      color: white;
     }
-    .code-input {
+    input {
       width: 100%;
       padding: 8px;
-      margin-top: 8px;
-      font-size: 16px;
+      margin-top: 10px;
+      margin-bottom: 10px;
     }
-    @media (max-width: 500px) {
-      .products {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      }
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Willkommen im Maus-City Store</h1>
-    <button id="admin-btn">a</button>
+    <button onclick="openAdmin()">a</button>
   </header>
-  <div class="products" id="product-list"></div>
 
-  <div id="overlay-container"></div>
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-  import { getDatabase, ref, onValue, get, set, remove, push } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+  <div class="grid" id="productGrid"></div>
 
-  const app = initializeApp({
-    apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
-    authDomain: "punkte-45c20.firebaseapp.com",
-    databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "punkte-45c20"
-  });
+  <div class="overlay" id="productOverlay">
+    <div class="overlay-content">
+      <button class="close" onclick="closeOverlay()">×</button>
+      <h2 id="productName"></h2>
+      <p id="productDescription"></p>
+      <p id="productLieferzeit"></p>
+      <button onclick="openUserSelect()">Jetzt kaufen</button>
+    </div>
+  </div>
 
-  const app2 = initializeApp({
-    apiKey: "AIzaSyAQaNKUa-RKvUcwlPpbI10rJeJo6dt8fbU",
-    authDomain: "gesamt-dae4e.firebaseapp.com",
-    databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "gesamt-dae4e"
-  }, "gesamt");
+  <div class="overlay select-user" id="userOverlay">
+    <div class="overlay-content">
+      <button class="close" onclick="closeUserOverlay()">×</button>
+      <h3>Bitte Benutzerkonto auswählen</h3>
+      <div class="user-list" id="userList"></div>
+    </div>
+  </div>
 
-  const db = getDatabase(app);
-  const db2 = getDatabase(app2);
+  <div class="overlay enter-code" id="codeOverlay">
+    <div class="overlay-content">
+      <button class="close" onclick="closeCodeOverlay()">×</button>
+      <h3>Sicherheitscode eingeben</h3>
+      <input type="password" id="codeInput" placeholder="Code">
+      <button class="buy-button" onclick="confirmPurchase()">Kaufen</button>
+      <div class="message" id="codeMessage"></div>
+    </div>
+  </div>
 
-  const shopRef = ref(db, "shopartikel");
-  const bestellRef = ref(db, "bestellungen");
-  const punkteRef = ref(db, "kinder");
-  const auslandRef = ref(db, "auslandskonten");
-  const codesRef = ref(db2, "kinder");
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getDatabase, ref, onValue, set, get, child, update, push
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-  const productList = document.getElementById("product-list");
-  const overlayContainer = document.getElementById("overlay-container");
+    const app1 = initializeApp({
+      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
+    }, "punkte");
 
-  let currentProduct = null;
-  let selectedUser = null;
+    const app2 = initializeApp({
+      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app"
+    }, "gesamt");
 
-  onValue(shopRef, (snap) => {
-    productList.innerHTML = "";
-    const items = [];
-    snap.forEach(child => {
-      const val = child.val();
-      val.id = child.key;
-      items.push(val);
-    });
-    items.sort((a,b) => a.preis - b.preis);
-    for (const p of items) {
-      const div = document.createElement("div");
-      div.className = "product";
-      div.innerHTML = `
-        <h3>${p.name}</h3>
-        <p>${p.preis} Mausdollar</p>
-        <p>${p.lieferzeit || ""}</p>
-      `;
-      div.onclick = () => openProduct(p);
-      productList.appendChild(div);
+    const db1 = getDatabase(app1);
+    const db2 = getDatabase(app2);
+
+    const productGrid = document.getElementById("productGrid");
+    const productOverlay = document.getElementById("productOverlay");
+    const productName = document.getElementById("productName");
+    const productDescription = document.getElementById("productDescription");
+    const productLieferzeit = document.getElementById("productLieferzeit");
+
+    const userOverlay = document.getElementById("userOverlay");
+    const userList = document.getElementById("userList");
+
+    const codeOverlay = document.getElementById("codeOverlay");
+    const codeInput = document.getElementById("codeInput");
+    const codeMessage = document.getElementById("codeMessage");
+
+    let selectedProduct = null;
+    let selectedUser = null;
+
+    function closeOverlay() {
+      productOverlay.style.display = "none";
     }
-  });
 
-  function openProduct(p) {
-    currentProduct = p;
-    overlayContainer.innerHTML = `
-      <div class="overlay">
-        <div class="overlay-content">
-          <button class="close-btn" onclick="closeOverlay()">×</button>
-          <h2>${p.name}</h2>
-          <p>${p.beschreibung || ""}</p>
-          <p><strong>Lieferzeit:</strong> ${p.lieferzeit || "Unbekannt"}</p>
-          <button onclick="selectUser()">Jetzt kaufen</button>
-        </div>
-      </div>
-    `;
-  }
+    function closeUserOverlay() {
+      userOverlay.style.display = "none";
+    }
 
-  window.closeOverlay = () => {
-    overlayContainer.innerHTML = "";
-    selectedUser = null;
-  };
+    function closeCodeOverlay() {
+      codeOverlay.style.display = "none";
+      codeInput.value = "";
+      codeMessage.textContent = "";
+    }
 
-  function selectUser() {
-    get(punkteRef).then(pSnap => {
-      get(auslandRef).then(aSnap => {
-        const kinder = [];
-        pSnap.forEach(child => kinder.push({ name: child.key, ...child.val() }));
-        aSnap.forEach(child => kinder.push({ name: child.key, ...child.val() }));
-        overlayContainer.innerHTML = `
-          <div class="overlay">
-            <div class="overlay-content">
-              <button class="close-btn" onclick="closeOverlay()">×</button>
-              <h2>Bitte Benutzerkonto auswählen</h2>
-              <div class="select-box">
-                ${kinder.map(k => `<button onclick="codeEingeben('${k.name}', ${k.punkte || 0})">${k.name} (${k.punkte || 0})</button>`).join("")}
-              </div>
-            </div>
-          </div>
-        `;
+    function openAdmin() {
+      const code = prompt("Admin-Code:");
+      if (code === "121071") location.href = "admin.html";
+    }
+
+    function openUserSelect() {
+      userList.innerHTML = "";
+      selectedUser = null;
+      userOverlay.style.display = "flex";
+
+      const pfade = ["kinder", "auslandskonten"];
+      pfade.forEach(pfad => {
+        const refPath = ref(db1, pfad);
+        onValue(refPath, snapshot => {
+          if (!snapshot.exists()) return;
+          Object.entries(snapshot.val()).forEach(([name, data]) => {
+            const btn = document.createElement("button");
+            btn.textContent = `${name} (${data.punkte || 0})`;
+            btn.onclick = () => {
+              selectedUser = { name, pfad };
+              closeUserOverlay();
+              codeOverlay.style.display = "flex";
+            };
+            userList.appendChild(btn);
+          });
+        }, { onlyOnce: true });
       });
-    });
-  }
+    }
 
-  window.codeEingeben = (name, punkte) => {
-    selectedUser = name;
-    overlayContainer.innerHTML = `
-      <div class="overlay">
-        <div class="overlay-content">
-          <button class="close-btn" onclick="closeOverlay()">×</button>
-          <h2>Code eingeben für ${name}</h2>
-          <input id="codeField" type="number" class="code-input" placeholder="Sicherheitscode eingeben" />
-          <button onclick="pruefeCode(${punkte})" class="kaufen-btn">Kaufen</button>
-        </div>
-      </div>
-    `;
-  };
+    function confirmPurchase() {
+      const code = codeInput.value.trim();
+      if (!selectedUser || !selectedProduct) return;
 
-  window.pruefeCode = (punkte) => {
-    const code = document.getElementById("codeField").value;
-    if (!code || !selectedUser || !currentProduct) return;
-    get(ref(db2, `kinder/${selectedUser}/code`)).then(snap => {
-      if (snap.exists() && snap.val().toString() === code.toString()) {
-        if (punkte < currentProduct.preis) {
-          alert("Du hast leider zu wenig Mausdollar.");
+      const codeRef = ref(db2, `kinder/${selectedUser.name}/code`);
+      get(codeRef).then(snap => {
+        if (!snap.exists() || snap.val() !== code) {
+          codeMessage.textContent = "❌ Code falsch.";
           return;
         }
-        // Punkte abziehen
-        set(ref(db, `kinder/${selectedUser}/punkte`), punkte - currentProduct.preis);
-        push(bestellRef, {
-          name: selectedUser,
-          artikel: currentProduct.name,
-          lieferzeit: currentProduct.lieferzeit || ""
+
+        const punkteRef = ref(db1, `${selectedUser.pfad}/${selectedUser.name}/punkte`);
+        get(punkteRef).then(pSnap => {
+          const punkte = pSnap.val() || 0;
+          if (punkte < selectedProduct.preis) {
+            codeMessage.textContent = "❌ Nicht genug Punkte.";
+            return;
+          }
+
+          const newPunkte = punkte - selectedProduct.preis;
+          set(punkteRef, newPunkte);
+
+          const newOrder = {
+            name: selectedUser.name,
+            artikel: selectedProduct.name,
+            lieferzeit: selectedProduct.lieferzeit || ""
+          };
+          const bestellRef = push(ref(db1, "bestellungen"));
+          set(bestellRef, newOrder);
+
+          codeMessage.textContent = `✔️ Bestellt! ${selectedProduct.lieferzeit || ""}`;
+          setTimeout(() => {
+            closeCodeOverlay();
+            closeOverlay();
+          }, 1500);
         });
-        overlayContainer.innerHTML = `
-          <div class="overlay">
-            <div class="overlay-content">
-              <button class="close-btn" onclick="closeOverlay()">×</button>
-              <h2>Erfolgreich bestellt!</h2>
-              <p>Voraussichtliche Lieferung: ${currentProduct.lieferzeit || "bald"}</p>
-            </div>
-          </div>
-        `;
-      } else {
-        alert("Falscher Code.");
-      }
-    });
-  };
-
-  document.getElementById("admin-btn").onclick = () => {
-    overlayContainer.innerHTML = `
-      <div class="overlay">
-        <div class="overlay-content">
-          <button class="close-btn" onclick="closeOverlay()">×</button>
-          <h2>Admin-Code</h2>
-          <input type="number" id="admincode" class="code-input" />
-          <button onclick="checkAdmin()" class="kaufen-btn">Login</button>
-        </div>
-      </div>
-    `;
-  };
-
-  window.checkAdmin = () => {
-    const input = document.getElementById("admincode").value;
-    if (input === "121071") {
-      window.location.href = "admin.html";
-    } else {
-      alert("Falscher Code.");
+      });
     }
-  };
-</script>
+
+    function showProductDetails(prod) {
+      selectedProduct = prod;
+      productName.textContent = prod.name;
+      productDescription.textContent = prod.beschreibung || "";
+      productLieferzeit.textContent = prod.lieferzeit || "";
+      productOverlay.style.display = "flex";
+    }
+
+    const produktRef = ref(db1, "shopartikel");
+    onValue(produktRef, snapshot => {
+      productGrid.innerHTML = "";
+      const produkte = Object.values(snapshot.val() || {});
+      produkte.sort((a, b) => (a.preis || 0) - (b.preis || 0));
+      produkte.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `<h3>${p.name}</h3><p>${p.preis} Maus$</p><p>${p.lieferzeit || ""}</p>`;
+        div.onclick = () => showProductDetails(p);
+        productGrid.appendChild(div);
+      });
+    });
+  </script>
 </body>
 </html>
