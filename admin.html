@@ -2,86 +2,84 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Maus-City Store Admin</title>
+  <title>Maus-City Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: sans-serif;
-      background: #f9f9f9;
       padding: 20px;
+      background: #f2f2f2;
     }
-    .section {
+    h2 {
+      margin-top: 30px;
+    }
+    .product {
       background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 30px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 10px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
-    input, textarea {
+    label {
       display: block;
-      margin-bottom: 10px;
-      padding: 8px;
-      font-size: 14px;
+      margin: 6px 0 2px;
+    }
+    input {
       width: 100%;
-      max-width: 400px;
+      padding: 6px;
+      font-size: 14px;
+      margin-bottom: 8px;
     }
     button {
-      padding: 8px 16px;
-      background-color: #ff9900;
-      color: white;
+      padding: 8px 14px;
+      font-size: 14px;
       border: none;
-      border-radius: 8px;
+      border-radius: 4px;
+      background: #007aff;
+      color: white;
       cursor: pointer;
-      margin-right: 10px;
-    }
-    .produkt {
-      border-top: 1px solid #ccc;
-      padding-top: 10px;
       margin-top: 10px;
     }
-    .delete {
-      color: red;
+    .delete-btn {
+      background: red;
+      margin-left: 8px;
+    }
+    .bestellung {
+      background: #fff3cd;
+      border: 1px solid #ffeeba;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+    }
+    .x {
+      float: right;
       cursor: pointer;
       font-weight: bold;
-      margin-left: 10px;
-    }
-    .delete:hover {
-      text-decoration: underline;
+      color: red;
     }
   </style>
 </head>
 <body>
-  <div id="login" class="section">
-    <h2>Admin Login</h2>
-    <input id="adminCode" placeholder="Admin-Code" />
-    <button onclick="checkLogin()">Login</button>
+  <h1>🛠 Maus-City Admin</h1>
+
+  <div id="bestellungen"></div>
+
+  <h2>Neues Produkt hinzufügen</h2>
+  <div class="product">
+    <label>Name</label><input id="name">
+    <label>Beschreibung</label><input id="beschreibung">
+    <label>Lieferzeit (in Tagen)</label><input id="lieferzeit" type="number">
+    <label>Preis</label><input id="preis" type="number">
+    <label>Stock</label><input id="stock" type="number">
+    <button onclick="hinzufügen()">Hinzufügen</button>
   </div>
 
-  <div id="adminPanel" style="display:none">
-    <div class="section" id="bestellungen">
-      <h2>Bestellungen</h2>
-      <div id="bestellungenListe"></div>
-    </div>
-
-    <div class="section">
-      <h2>Produkt hinzufügen / bearbeiten</h2>
-      <input id="productId" placeholder="ID (z. B. '001')" />
-      <input id="productName" placeholder="Name" />
-      <input id="productPrice" type="number" placeholder="Preis in Mausdollar" />
-      <input id="productStock" type="number" placeholder="Anzahl auf Lager" />
-      <input id="productLieferzeit" placeholder="Lieferzeit (z. B. '3 Tage')" />
-      <textarea id="productDesc" placeholder="Beschreibung"></textarea>
-      <button id="saveProductBtn">Speichern</button>
-    </div>
-
-    <div class="section">
-      <h2>Alle Produkte</h2>
-      <div id="alleProdukte"></div>
-    </div>
-  </div>
+  <h2>Produkte bearbeiten</h2>
+  <div id="produktListe"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+    import { getDatabase, ref, push, set, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
@@ -96,93 +94,73 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const adminCode = "121071";
+    const produktRef = ref(db, "shopartikel");
+    const bestellRef = ref(db, "bestellungen");
 
-    window.checkLogin = () => {
-      const code = document.getElementById("adminCode").value.trim();
-      if (code === adminCode) {
-        document.getElementById("login").style.display = "none";
-        document.getElementById("adminPanel").style.display = "block";
-        ladeProdukte();
-        ladeBestellungen();
-      } else {
-        alert("Falscher Code!");
-      }
-    };
-
-    document.getElementById("saveProductBtn").onclick = async () => {
-      const id = document.getElementById("productId").value.trim();
-      const name = document.getElementById("productName").value.trim();
-      const price = parseInt(document.getElementById("productPrice").value);
-      const stock = parseInt(document.getElementById("productStock").value);
-      const lieferzeit = document.getElementById("productLieferzeit").value.trim();
-      const beschreibung = document.getElementById("productDesc").value.trim();
-
-      if (!id || !name || isNaN(price) || isNaN(stock) || !lieferzeit) {
-        alert("Bitte alle Felder korrekt ausfüllen.");
-        return;
-      }
-
-      await set(ref(db, "shopartikel/" + id), {
-        name,
-        price,
-        stock,
-        lieferzeit,
-        beschreibung
-      });
-
-      alert("Produkt gespeichert!");
-      ladeProdukte();
-    };
-
-    async function ladeProdukte() {
-      const container = document.getElementById("alleProdukte");
-      container.innerHTML = "";
-      const snapshot = await get(ref(db, "shopartikel"));
-      if (!snapshot.exists()) return;
-      const data = snapshot.val();
-      for (const id in data) {
-        const p = data[id];
-        const div = document.createElement("div");
-        div.className = "produkt";
-        div.innerHTML = `
-          <b>${p.name}</b> – ${p.price} Maus$ (${p.stock}x)<br>
-          Lieferzeit: ${p.lieferzeit}<br>
-          <small>${p.beschreibung || ""}</small>
-          <span class="delete" onclick="loescheProdukt('${id}')">🗑️</span>
-        `;
-        container.appendChild(div);
-      }
+    function hinzufügen() {
+      const produkt = {
+        name: document.getElementById("name").value,
+        beschreibung: document.getElementById("beschreibung").value,
+        lieferzeit: document.getElementById("lieferzeit").value,
+        price: parseInt(document.getElementById("preis").value),
+        stock: parseInt(document.getElementById("stock").value)
+      };
+      push(produktRef, produkt);
+      alert("Produkt hinzugefügt");
     }
 
-    async function ladeBestellungen() {
-      const bereich = document.getElementById("bestellungenListe");
-      onValue(ref(db, "bestellungen"), (snapshot) => {
-        bereich.innerHTML = "";
-        snapshot.forEach(childSnap => {
-          const id = childSnap.key;
-          const bestellung = childSnap.val();
+    function ladeProdukte() {
+      onValue(produktRef, (snapshot) => {
+        const liste = document.getElementById("produktListe");
+        liste.innerHTML = "";
+        snapshot.forEach(child => {
+          const id = child.key;
+          const p = child.val();
           const div = document.createElement("div");
+          div.className = "product";
           div.innerHTML = `
-            🛒 ${bestellung.name} hat <b>${bestellung.produkt}</b> bestellt (${bestellung.preis} Maus$)<br>
-            <small>Lieferzeit: ${bestellung.lieferzeit}</small>
-            <span class="delete" onclick="loescheBestellung('${id}')">x</span>
+            <label>Name</label><input value="${p.name}" onchange="aktualisieren('${id}', 'name', this.value)">
+            <label>Beschreibung</label><input value="${p.beschreibung}" onchange="aktualisieren('${id}', 'beschreibung', this.value)">
+            <label>Lieferzeit</label><input type="number" value="${p.lieferzeit}" onchange="aktualisieren('${id}', 'lieferzeit', this.value)">
+            <label>Preis</label><input type="number" value="${p.price}" onchange="aktualisieren('${id}', 'price', this.value)">
+            <label>Stock</label><input type="number" value="${p.stock}" onchange="aktualisieren('${id}', 'stock', this.value)">
+            <button class="delete-btn" onclick="löschen('${id}')">Löschen</button>
           `;
-          bereich.appendChild(div);
+          liste.appendChild(div);
         });
       });
     }
 
-    window.loescheProdukt = async (id) => {
-      if (confirm("Produkt wirklich löschen?")) {
-        await remove(ref(db, "shopartikel/" + id));
-        ladeProdukte();
-      }
-    };
+    window.aktualisieren = function(id, feld, wert) {
+      update(ref(db, "shopartikel/" + id), { [feld]: feld === "price" || feld === "stock" ? parseInt(wert) : wert });
+    }
 
-    window.loescheBestellung = async (id) => {
-      await remove(ref(db, "bestellungen/" + id));
-    };
+    window.löschen = function(id) {
+      if (confirm("Wirklich löschen?")) remove(ref(db, "shopartikel/" + id));
+    }
+
+    function ladeBestellungen() {
+      onValue(bestellRef, (snapshot) => {
+        const b = document.getElementById("bestellungen");
+        b.innerHTML = "<h2>Bestellungen</h2>";
+        snapshot.forEach(child => {
+          const key = child.key;
+          const d = child.val();
+          const div = document.createElement("div");
+          div.className = "bestellung";
+          div.innerHTML = `<span class="x" onclick="entferneBestellung('${key}')">x</span>
+          <strong>${d.name}</strong> hat <strong>${d.produkt}</strong> bestellt. Lieferzeit: ${d.lieferzeit} Tage`;
+          b.appendChild(div);
+        });
+      });
+    }
+
+    window.entferneBestellung = function(key) {
+      remove(ref(db, "bestellungen/" + key));
+    }
+
+    ladeProdukte();
+    ladeBestellungen();
   </script>
 </body>
 </html>
