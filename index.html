@@ -2,121 +2,322 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Willkommen im Maus-City Store</title>
+  <title>Maus-City Store</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
       margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f4f4f4;
+      color: #000;
+      padding: 10px;
     }
     h1 {
+      font-size: 22px;
+      margin-bottom: 14px;
       text-align: center;
-      font-size: 26px;
-      margin-bottom: 20px;
     }
-    .grid {
+    .produkte-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
     }
     .produkt {
       background: white;
       padding: 12px;
       border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
     }
     .produkt h3 {
-      margin: 0 0 8px 0;
       font-size: 16px;
+      margin: 0 0 6px 0;
     }
     .produkt .preis {
       font-weight: bold;
-      color: green;
-      margin-bottom: 6px;
+      margin-top: 6px;
+      color: #007aff;
     }
-    .produkt button {
-      background: #ffd814;
-      border: 1px solid #fcd200;
-      border-radius: 6px;
-      padding: 6px;
-      cursor: pointer;
-      font-weight: bold;
+    .detail {
+      display: none;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.15);
     }
-    .produkt button:hover {
-      background: #f7ca00;
+    .detail h2 {
+      margin-top: 0;
     }
-    #admin-login {
-      position: fixed;
-      top: 12px;
-      right: 12px;
+    .btn {
       background: #007aff;
       color: white;
-      padding: 8px 14px;
+      padding: 10px;
+      border: none;
       border-radius: 10px;
-      font-weight: bold;
+      font-size: 15px;
+      margin-top: 14px;
       cursor: pointer;
-      z-index: 100;
+      width: 100%;
+    }
+    .btn:disabled {
+      background: #999;
+      cursor: default;
+    }
+    .admin-panel {
+      display: none;
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 20px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    }
+    input, textarea, select {
+      display: block;
+      margin: 6px 0;
+      padding: 8px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .admin-item {
+      background: #eee;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .delete-btn {
+      background: red;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      margin-top: 4px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .bestellungen {
+      margin-top: 20px;
+    }
+    .bestellung {
+      background: #fff3d1;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .close-x {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      color: red;
     }
   </style>
 </head>
 <body>
-  <h1>Willkommen im Maus-City Store</h1>
-  <div id="admin-login">Admin Login</div>
-  <div class="grid" id="produktliste"></div>
-
-  <script type="module">
+  <h1>Willkommen im Maus-City Store 🛍️</h1>
+  <div id="produkte" class="produkte-grid"></div>
+  <div id="detail" class="detail"></div>
+  <div id="admin" class="admin-panel"></div>
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+    import { getDatabase, ref, onValue, set, push, remove, get, update } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAQaNKUa-RKvUcwlPpWnEyKxcVjYV6cZuU",
-      authDomain: "gesamt-dae4e.firebaseapp.com",
-      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "gesamt-dae4e",
-      storageBucket: "gesamt-dae4e.appspot.com",
-      messagingSenderId: "844023612743",
-      appId: "1:844023612743:web:0821aa894541f89a7df862"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    const produktliste = document.getElementById("produktliste");
-
-    onValue(ref(db, "shopartikel"), (snapshot) => {
-      produktliste.innerHTML = "";
-      const daten = [];
-      snapshot.forEach(child => {
-        const data = child.val();
-        daten.push({ id: child.key, ...data });
-      });
-
-      daten.sort((a, b) => a.preis - b.preis); // nach Preis sortieren
-
-      daten.forEach(artikel => {
-        const box = document.createElement("div");
-        box.className = "produkt";
-        box.innerHTML = `
-          <h3>${artikel.name}</h3>
-          <div class="preis">${artikel.preis} Maus-Dollar</div>
-          <button onclick="location.href='produkt.html?id=${artikel.id}'">Ansehen</button>
-        `;
-        produktliste.appendChild(box);
-      });
+    const app = initializeApp({
+      apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
+      authDomain: "punkte-45c20.firebaseapp.com",
+      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "punkte-45c20",
+      storageBucket: "punkte-45c20.appspot.com",
+      messagingSenderId: "931713539549",
+      appId: "1:931713539549:web:e348bf38369639f1906a34"
     });
 
-    document.getElementById("admin-login").onclick = () => {
-      const code = prompt("Admincode eingeben:");
-      if (code === "121071") {
-        location.href = "admin.html";
-      } else {
-        alert("Falscher Code.");
+    const db = getDatabase(app);
+    const shopRef = ref(db, "shopartikel");
+    const kinderRef = ref(db, "kinder");
+    const bestellRef = ref(db, "bestellungen");
+
+    const produkteDiv = document.getElementById("produkte");
+    const detailDiv = document.getElementById("detail");
+    const adminDiv = document.getElementById("admin");
+
+    function renderProdukte(produkte) {
+      produkteDiv.innerHTML = "";
+      detailDiv.innerHTML = "";
+      detailDiv.style.display = "none";
+      produkte.sort((a, b) => a.preis - b.preis);
+      for (const p of produkte) {
+        const div = document.createElement("div");
+        div.className = "produkt";
+        div.innerHTML = `
+          <h3>${p.name}</h3>
+          <div>${p.beschreibung || "Keine Beschreibung"}</div>
+          <div class="preis">${p.preis} Mausdollar</div>
+          <div>Lieferzeit: ${p.lieferzeit}</div>
+          <div>Verfügbar: ${p.stock > 0 ? p.stock : "<b style='color:red;'>Ausverkauft</b>"}</div>
+        `;
+        if (p.stock > 0) {
+          div.onclick = () => zeigeDetail(p);
+        }
+        produkteDiv.appendChild(div);
       }
+    }
+
+    function zeigeDetail(p) {
+      detailDiv.style.display = "block";
+      detailDiv.innerHTML = `
+        <h2>${p.name}</h2>
+        <p>${p.beschreibung || "Keine Beschreibung vorhanden."}</p>
+        <p><b>Preis:</b> ${p.preis} Mausdollar</p>
+        <p><b>Lieferzeit:</b> ${p.lieferzeit}</p>
+        <p><b>Verfügbar:</b> ${p.stock}</p>
+        <button class="btn" onclick='kaufe(${JSON.stringify(JSON.stringify(p))})'>Jetzt kaufen</button>
+        <button class="btn" onclick='window.location.reload()'>Zurück</button>
+      `;
+    }
+
+    window.kaufe = async function(pStr) {
+      const p = JSON.parse(JSON.parse(pStr));
+      const name = prompt("Welcher Account kauft ein?");
+      if (!name) return;
+
+      const codeSnap = await get(ref(getDatabase(app), `kinder/${name}`));
+      if (!codeSnap.exists()) return alert("Kind nicht gefunden.");
+
+      const kindCode = codeSnap.val().code;
+      const pin = prompt("Bitte Sicherheitscode eingeben:");
+      if (pin !== kindCode) return alert("Falscher Code.");
+
+      const kontoSnap = await get(ref(db, "kinder/" + name));
+      if (!kontoSnap.exists()) return alert("Kein Punktekonto vorhanden.");
+
+      const konto = kontoSnap.val();
+      if (konto.punkte < p.preis) return alert("Du hast zu wenig Mausdollar!");
+
+      await update(ref(db, "kinder/" + name), { punkte: konto.punkte - p.preis });
+      await push(bestellRef, {
+        name,
+        artikel: p.name,
+        zeit: new Date().toISOString(),
+        lieferzeit: p.lieferzeit
+      });
+      await update(ref(db, "shopartikel/" + p.id), { stock: p.stock - 1 });
+
+      alert("Bestellung erfolgreich! Voraussichtliche Lieferung: " + p.lieferzeit);
+      window.location.reload();
+    };
+
+    onValue(shopRef, (snap) => {
+      const produkte = [];
+      snap.forEach(child => {
+        const val = child.val();
+        produkte.push({ ...val, id: child.key });
+      });
+      renderProdukte(produkte);
+    });
+
+    // ADMIN LOGIN
+    const adminCode = "121071";
+    const login = prompt("Admin-Code eingeben oder leer lassen:");
+    if (login === adminCode) zeigeAdmin();
+
+    function zeigeAdmin() {
+      adminDiv.style.display = "block";
+      adminDiv.innerHTML = `
+        <h2>Shopverwaltung</h2>
+        <input id="aname" placeholder="Produktname" />
+        <input id="apreis" type="number" placeholder="Preis (Mausdollar)" />
+        <input id="alieferzeit" placeholder="Lieferzeit" />
+        <input id="astock" type="number" placeholder="Lagerbestand" />
+        <textarea id="abeschreibung" placeholder="Beschreibung"></textarea>
+        <button class="btn" onclick="hinzufuegen()">Speichern</button>
+        <div id="artikel-liste"></div>
+        <div class="bestellungen"><h3>Bestellungen</h3><div id="bestellungen"></div></div>
+      `;
+
+      onValue(shopRef, (snap) => {
+        const container = document.getElementById("artikel-liste");
+        container.innerHTML = "";
+        snap.forEach(child => {
+          const id = child.key;
+          const data = child.val();
+          const div = document.createElement("div");
+          div.className = "admin-item";
+          div.innerHTML = `
+            <b>${data.name}</b><br/>
+            ${data.preis} MD – Lager: ${data.stock}<br/>
+            <button onclick="bearbeiten('${id}')">Bearbeiten</button>
+            <button class="delete-btn" onclick="loeschen('${id}')">Löschen</button>
+          `;
+          container.appendChild(div);
+        });
+      });
+
+      onValue(bestellRef, (snap) => {
+        const div = document.getElementById("bestellungen");
+        div.innerHTML = "";
+        snap.forEach(child => {
+          const id = child.key;
+          const d = child.val();
+          const b = document.createElement("div");
+          b.className = "bestellung";
+          b.innerHTML = `
+            ${d.name} hat <b>${d.artikel}</b> bestellt (Lieferung: ${d.lieferzeit})
+            <span class="close-x" onclick="remove(ref(getDatabase(app), 'bestellungen/${id}'))">x</span>
+          `;
+          div.appendChild(b);
+        });
+      });
+    }
+
+    window.hinzufuegen = () => {
+      const data = {
+        name: document.getElementById("aname").value,
+        preis: parseInt(document.getElementById("apreis").value),
+        lieferzeit: document.getElementById("alieferzeit").value,
+        stock: parseInt(document.getElementById("astock").value),
+        beschreibung: document.getElementById("abeschreibung").value
+      };
+      if (!data.name || isNaN(data.preis)) return alert("Name & Preis angeben!");
+      push(shopRef, data);
+      document.getElementById("aname").value = "";
+      document.getElementById("apreis").value = "";
+      document.getElementById("alieferzeit").value = "";
+      document.getElementById("astock").value = "";
+      document.getElementById("abeschreibung").value = "";
+    };
+
+    window.bearbeiten = async (id) => {
+      const snap = await get(ref(db, "shopartikel/" + id));
+      if (!snap.exists()) return;
+      const data = snap.val();
+      document.getElementById("aname").value = data.name;
+      document.getElementById("apreis").value = data.preis;
+      document.getElementById("alieferzeit").value = data.lieferzeit;
+      document.getElementById("astock").value = data.stock;
+      document.getElementById("abeschreibung").value = data.beschreibung;
+      window.scrollTo(0, 0);
+      window.hinzufuegen = () => {
+        const neu = {
+          name: document.getElementById("aname").value,
+          preis: parseInt(document.getElementById("apreis").value),
+          lieferzeit: document.getElementById("alieferzeit").value,
+          stock: parseInt(document.getElementById("astock").value),
+          beschreibung: document.getElementById("abeschreibung").value
+        };
+        set(ref(db, "shopartikel/" + id), neu);
+        location.reload();
+      };
+    };
+
+    window.loeschen = (id) => {
+      if (confirm("Wirklich löschen?")) remove(ref(db, "shopartikel/" + id));
     };
   </script>
 </body>
