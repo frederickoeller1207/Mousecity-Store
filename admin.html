@@ -2,166 +2,187 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>Maus-City Store – Admin</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Maus-City Store Admin</title>
   <style>
     body {
       font-family: sans-serif;
+      background: #f9f9f9;
       padding: 20px;
-      background: #f5f5f5;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
     }
     .section {
       background: white;
-      padding: 20px;
-      border-radius: 12px;
+      padding: 15px;
+      border-radius: 10px;
       margin-bottom: 30px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     input, textarea {
-      padding: 6px;
-      margin: 4px 0;
-      width: 100%;
+      display: block;
+      margin-bottom: 10px;
+      padding: 8px;
       font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      width: 100%;
+      max-width: 400px;
     }
     button {
-      background: #007aff;
+      padding: 8px 16px;
+      background-color: #ff9900;
       color: white;
       border: none;
-      padding: 8px 14px;
-      margin-top: 8px;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
+      margin-right: 10px;
     }
-    button:hover {
-      background: #005bb5;
+    .produkt {
+      border-top: 1px solid #ccc;
+      padding-top: 10px;
+      margin-top: 10px;
     }
-    .delete-btn {
-      background: red;
+    .delete {
+      color: red;
+      cursor: pointer;
+      font-weight: bold;
       margin-left: 10px;
     }
-    .produkt-box {
-      margin-bottom: 16px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid #ccc;
+    .delete:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <h1>Admin – Maus-City Store</h1>
-
-  <div class="section">
-    <h2>🛒 Bestellungen</h2>
-    <div id="bestellungen"></div>
+  <div id="login" class="section">
+    <h2>Admin Login</h2>
+    <input id="adminCode" placeholder="Admin-Code" />
+    <button onclick="checkLogin()">Login</button>
   </div>
 
-  <div class="section">
-    <h2>📦 Produkte verwalten</h2>
-    <input id="pname" placeholder="Produktname">
-    <input id="ppreis" type="number" placeholder="Preis (Maus-Dollar)">
-    <input id="plieferzeit" placeholder="Lieferzeit z. B. 2–3 Tage">
-    <input id="pstock" type="number" placeholder="Lagerbestand">
-    <textarea id="pbeschreibung" placeholder="Beschreibung" rows="3"></textarea>
-    <button onclick="speichern()">Speichern</button>
+  <div id="adminPanel" style="display:none">
+    <div class="section" id="bestellungen">
+      <h2>Bestellungen</h2>
+      <div id="bestellungenListe"></div>
+    </div>
 
-    <div id="produktliste"></div>
+    <div class="section">
+      <h2>Produkt hinzufügen / bearbeiten</h2>
+      <input id="productId" placeholder="ID (z. B. '001')" />
+      <input id="productName" placeholder="Name" />
+      <input id="productPrice" type="number" placeholder="Preis in Mausdollar" />
+      <input id="productStock" type="number" placeholder="Anzahl auf Lager" />
+      <input id="productLieferzeit" placeholder="Lieferzeit (z. B. '3 Tage')" />
+      <textarea id="productDesc" placeholder="Beschreibung"></textarea>
+      <button id="saveProductBtn">Speichern</button>
+    </div>
+
+    <div class="section">
+      <h2>Alle Produkte</h2>
+      <div id="alleProdukte"></div>
+    </div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-app.js";
-    import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
+    import { getDatabase, ref, set, get, onValue, remove } from "https://www.gstatic.com/firebasejs/10.5.2/firebase-database.js";
 
-    const app = initializeApp({
-      apiKey: "AIzaSyAQaNKUa-RKvUcwlPpWnEyKxcVjYV6cZuU",
-      authDomain: "gesamt-dae4e.firebaseapp.com",
-      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app",
-      projectId: "gesamt-dae4e",
-      storageBucket: "gesamt-dae4e.appspot.com",
-      messagingSenderId: "844023612743",
-      appId: "1:844023612743:web:0821aa894541f89a7df862"
-    });
+    const firebaseConfig = {
+      apiKey: "AIzaSyAdPN2duh89Fx5rmYlFshdf0juhYNX_7fg",
+      authDomain: "punkte-45c20.firebaseapp.com",
+      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "punkte-45c20",
+      storageBucket: "punkte-45c20.appspot.com",
+      messagingSenderId: "931713539549",
+      appId: "1:931713539549:web:e348bf38369639f1906a34"
+    };
 
+    const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const pname = document.getElementById("pname");
-    const ppreis = document.getElementById("ppreis");
-    const plieferzeit = document.getElementById("plieferzeit");
-    const pstock = document.getElementById("pstock");
-    const pbeschreibung = document.getElementById("pbeschreibung");
-    const produktliste = document.getElementById("produktliste");
-    let editId = null;
+    const adminCode = "121071";
 
-    function speichern() {
-      const name = pname.value.trim();
-      const preis = parseInt(ppreis.value);
-      const lieferzeit = plieferzeit.value.trim();
-      const stock = parseInt(pstock.value);
-      const beschreibung = pbeschreibung.value.trim();
-      if (!name || !lieferzeit || isNaN(preis) || isNaN(stock)) {
+    window.checkLogin = () => {
+      const code = document.getElementById("adminCode").value.trim();
+      if (code === adminCode) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("adminPanel").style.display = "block";
+        ladeProdukte();
+        ladeBestellungen();
+      } else {
+        alert("Falscher Code!");
+      }
+    };
+
+    document.getElementById("saveProductBtn").onclick = async () => {
+      const id = document.getElementById("productId").value.trim();
+      const name = document.getElementById("productName").value.trim();
+      const price = parseInt(document.getElementById("productPrice").value);
+      const stock = parseInt(document.getElementById("productStock").value);
+      const lieferzeit = document.getElementById("productLieferzeit").value.trim();
+      const beschreibung = document.getElementById("productDesc").value.trim();
+
+      if (!id || !name || isNaN(price) || isNaN(stock) || !lieferzeit) {
         alert("Bitte alle Felder korrekt ausfüllen.");
         return;
       }
 
-      const id = editId || Date.now().toString();
-      set(ref(db, "shopartikel/" + id), { name, preis, lieferzeit, stock, beschreibung });
-      pname.value = "";
-      ppreis.value = "";
-      plieferzeit.value = "";
-      pstock.value = "";
-      pbeschreibung.value = "";
-      editId = null;
+      await set(ref(db, "shopartikel/" + id), {
+        name,
+        price,
+        stock,
+        lieferzeit,
+        beschreibung
+      });
+
+      alert("Produkt gespeichert!");
+      ladeProdukte();
+    };
+
+    async function ladeProdukte() {
+      const container = document.getElementById("alleProdukte");
+      container.innerHTML = "";
+      const snapshot = await get(ref(db, "shopartikel"));
+      if (!snapshot.exists()) return;
+      const data = snapshot.val();
+      for (const id in data) {
+        const p = data[id];
+        const div = document.createElement("div");
+        div.className = "produkt";
+        div.innerHTML = `
+          <b>${p.name}</b> – ${p.price} Maus$ (${p.stock}x)<br>
+          Lieferzeit: ${p.lieferzeit}<br>
+          <small>${p.beschreibung || ""}</small>
+          <span class="delete" onclick="loescheProdukt('${id}')">🗑️</span>
+        `;
+        container.appendChild(div);
+      }
     }
 
-    onValue(ref(db, "shopartikel"), (snapshot) => {
-      produktliste.innerHTML = "";
-      snapshot.forEach(child => {
-        const id = child.key;
-        const data = child.val();
-        const div = document.createElement("div");
-        div.className = "produkt-box";
-        div.innerHTML = `
-          <b>${data.name}</b> – ${data.preis} MD – Lager: ${data.stock} – ${data.lieferzeit}<br>
-          <i>${data.beschreibung || "Keine Beschreibung"}</i><br>
-          <button onclick="bearbeiten('${id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Bearbeiten</button>
-          <button class="delete-btn" onclick="entfernen('${id}')">Löschen</button>
-        `;
-        produktliste.appendChild(div);
+    async function ladeBestellungen() {
+      const bereich = document.getElementById("bestellungenListe");
+      onValue(ref(db, "bestellungen"), (snapshot) => {
+        bereich.innerHTML = "";
+        snapshot.forEach(childSnap => {
+          const id = childSnap.key;
+          const bestellung = childSnap.val();
+          const div = document.createElement("div");
+          div.innerHTML = `
+            🛒 ${bestellung.name} hat <b>${bestellung.produkt}</b> bestellt (${bestellung.preis} Maus$)<br>
+            <small>Lieferzeit: ${bestellung.lieferzeit}</small>
+            <span class="delete" onclick="loescheBestellung('${id}')">x</span>
+          `;
+          bereich.appendChild(div);
+        });
       });
-    });
+    }
 
-    window.entfernen = (id) => {
-      if (confirm("Wirklich löschen?")) {
-        remove(ref(db, "shopartikel/" + id));
+    window.loescheProdukt = async (id) => {
+      if (confirm("Produkt wirklich löschen?")) {
+        await remove(ref(db, "shopartikel/" + id));
+        ladeProdukte();
       }
     };
 
-    window.bearbeiten = (id, data) => {
-      editId = id;
-      pname.value = data.name;
-      ppreis.value = data.preis;
-      plieferzeit.value = data.lieferzeit;
-      pstock.value = data.stock;
-      pbeschreibung.value = data.beschreibung || "";
-      window.scrollTo(0, 0);
+    window.loescheBestellung = async (id) => {
+      await remove(ref(db, "bestellungen/" + id));
     };
-
-    onValue(ref(db, "bestellungen"), (snapshot) => {
-      const el = document.getElementById("bestellungen");
-      el.innerHTML = "";
-      snapshot.forEach(child => {
-        const id = child.key;
-        const data = child.val();
-        const box = document.createElement("div");
-        box.innerHTML = `🧒 ${data.name} hat <b>${data.produkt}</b> bestellt<br>
-        <button onclick="remove(ref(db, 'bestellungen/${id}'))">x</button><br><br>`;
-        el.appendChild(box);
-      });
-    });
   </script>
 </body>
 </html>
