@@ -1,190 +1,257 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Maus-City Adminbereich</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      padding: 16px;
-    }
-    h2 {
-      margin-top: 20px;
-      font-size: 18px;
-    }
-    .section {
-      background: white;
-      padding: 16px;
-      margin-top: 10px;
-      border-radius: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .item span {
-      flex: 1;
-    }
-    .item button {
-      margin-left: 6px;
-      background: #d33;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
-    }
-    .item button.edit {
-      background: #ffa500;
-    }
-    input, textarea {
-      width: 100%;
-      margin: 4px 0 10px;
-      padding: 6px;
-      box-sizing: border-box;
-    }
-    button.add {
-      background: #28a745;
-      color: white;
-      border: none;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      width: 100%;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maus-City Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f3f3;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #232f3e;
+            color: white;
+            padding: 10px 20px;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+
+        main {
+            padding: 20px;
+        }
+        
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 1em;
+        }
+
+        .admin-section {
+            margin-bottom: 30px;
+        }
+
+        .admin-section h2 {
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+        }
+
+        .admin-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .admin-section li {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-section li button {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        .admin-section li button.delete-btn {
+            color: red;
+        }
+
+        .admin-section li button.edit-btn {
+            color: #3498db;
+        }
+
+        #product-form input, #product-form textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #save-product-button {
+            background-color: #ffd814;
+            border: 1px solid #fcd200;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+            margin-top: 15px;
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 
-  <h1>Maus-City Adminbereich</h1>
+    <header>
+        <h1>Maus-City Admin-Backend</h1>
+        <a href="index.html" class="back-link">← Zurück zum Shop</a>
+    </header>
 
-  <h2>🛒 Bestellungen</h2>
-  <div class="section" id="ordersSection"></div>
+    <main>
+        <section class="admin-section">
+            <h2>Bestellungen</h2>
+            <ul id="orders-list"></ul>
+        </section>
+        
+        <hr>
 
-  <h2>🧰 Produktverwaltung</h2>
-  <div class="section">
-    <input type="text" id="name" placeholder="Produktname">
-    <input type="number" id="preis" placeholder="Preis (Maus$)">
-    <input type="text" id="lieferzeit" placeholder="Lieferzeit (z. B. 1–2 Tage)">
-    <textarea id="beschreibung" placeholder="Beschreibung (optional)"></textarea>
-    <button class="add" onclick="addProduct()">Produkt hinzufügen</button>
-  </div>
+        <section class="admin-section">
+            <h2>Produktverwaltung</h2>
+            <div id="product-form">
+                <input type="hidden" id="product-id">
+                <input type="text" id="product-name-input" placeholder="Produktname" required>
+                <input type="number" id="product-price-input" placeholder="Preis (Mausdollar)" required>
+                <input type="text" id="product-delivery-input" placeholder="Lieferzeit" required>
+                <textarea id="product-description-input" placeholder="Beschreibung (optional)"></textarea>
+                <button id="save-product-button">Produkt hinzufügen</button>
+            </div>
+            <ul id="products-list"></ul>
+        </section>
+    </main>
 
-  <div class="section" id="productList"></div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getDatabase, ref, onValue, set, remove, push, update
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-    const app = initializeApp({
-      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
-    });
-
-    const db = getDatabase(app);
-
-    const ordersSection = document.getElementById("ordersSection");
-    const productList = document.getElementById("productList");
-
-    const nameInput = document.getElementById("name");
-    const preisInput = document.getElementById("preis");
-    const lieferInput = document.getElementById("lieferzeit");
-    const beschrInput = document.getElementById("beschreibung");
-
-    function renderOrders() {
-      const bestellRef = ref(db, "bestellungen");
-      onValue(bestellRef, snapshot => {
-        ordersSection.innerHTML = "";
-        const orders = snapshot.val() || {};
-        Object.entries(orders).forEach(([id, data]) => {
-          const div = document.createElement("div");
-          div.className = "item";
-          div.innerHTML = `<span>📦 ${data.name} bestellt ${data.artikel} (${data.lieferzeit || "-"})</span>
-                           <button onclick="deleteOrder('${id}')">x</button>`;
-          ordersSection.appendChild(div);
-        });
-      });
-    }
-
-    function deleteOrder(id) {
-      const refPath = ref(db, `bestellungen/${id}`);
-      remove(refPath);
-    }
-
-    function renderProducts() {
-      const prodRef = ref(db, "shopartikel");
-      onValue(prodRef, snapshot => {
-        productList.innerHTML = "";
-        const products = snapshot.val() || {};
-        Object.entries(products).forEach(([id, data]) => {
-          const div = document.createElement("div");
-          div.className = "item";
-          div.innerHTML = `<span>🧸 ${data.name} – ${data.preis} Maus$ (${data.lieferzeit || "-"})</span>
-            <button class="edit" onclick="editProduct('${id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">✏️</button>
-            <button onclick="deleteProduct('${id}')">x</button>`;
-          productList.appendChild(div);
-        });
-      });
-    }
-
-    function deleteProduct(id) {
-      const refPath = ref(db, `shopartikel/${id}`);
-      remove(refPath);
-    }
-
-    function addProduct() {
-      const name = nameInput.value.trim();
-      const preis = parseInt(preisInput.value.trim());
-      const lieferzeit = lieferInput.value.trim();
-      const beschreibung = beschrInput.value.trim();
-
-      if (!name || isNaN(preis)) return;
-
-      const newRef = push(ref(db, "shopartikel"));
-      set(newRef, { name, preis, lieferzeit, beschreibung });
-
-      nameInput.value = "";
-      preisInput.value = "";
-      lieferInput.value = "";
-      beschrInput.value = "";
-    }
-
-    window.editProduct = function (id, data) {
-      nameInput.value = data.name;
-      preisInput.value = data.preis;
-      lieferInput.value = data.lieferzeit || "";
-      beschrInput.value = data.beschreibung || "";
-
-      const button = document.querySelector("button.add");
-      button.textContent = "Änderung speichern";
-      button.onclick = function () {
-        const updated = {
-          name: nameInput.value.trim(),
-          preis: parseInt(preisInput.value.trim()),
-          lieferzeit: lieferInput.value.trim(),
-          beschreibung: beschrInput.value.trim()
+    <script>
+        // Firebase-Konfiguration
+        const firebaseConfigPunkte = {
+            apiKey: "DEIN_API_KEY_MUSS_HIER_EINGEFUEGT_WERDEN", // Füge hier deinen API-Key ein
+            databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
         };
-        update(ref(db, `shopartikel/${id}`), updated);
+        const appPunkte = firebase.initializeApp(firebaseConfigPunkte);
+        const dbPunkte = appPunkte.database();
 
-        nameInput.value = "";
-        preisInput.value = "";
-        lieferInput.value = "";
-        beschrInput.value = "";
+        // Admin-Logik
+        const ordersList = document.getElementById('orders-list');
+        const productsList = document.getElementById('products-list');
+        const saveProductButton = document.getElementById('save-product-button');
+        const productIdInput = document.getElementById('product-id');
+        const productNameInput = document.getElementById('product-name-input');
+        const productPriceInput = document.getElementById('product-price-input');
+        const productDeliveryInput = document.getElementById('product-delivery-input');
+        const productDescriptionInput = document.getElementById('product-description-input');
 
-        button.textContent = "Produkt hinzufügen";
-        button.onclick = addProduct;
-      };
-    };
+        const loadOrders = () => {
+            const ordersRef = dbPunkte.ref('bestellungen');
+            ordersRef.on('value', (snapshot) => {
+                ordersList.innerHTML = '';
+                const orders = snapshot.val();
+                if (orders) {
+                    Object.keys(orders).forEach(key => {
+                        const order = orders[key];
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>
+                                <strong>${order.name}</strong> hat ${order.artikel} bestellt.
+                                <small>(${order.lieferzeit})</small>
+                            </span>
+                            <button class="delete-btn" data-id="${key}">x</button>
+                        `;
+                        ordersList.appendChild(li);
+                    });
+                }
+            });
+        };
 
-    renderOrders();
-    renderProducts();
-  </script>
+        ordersList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const orderId = e.target.dataset.id;
+                dbPunkte.ref(`bestellungen/${orderId}`).remove();
+            }
+        });
+
+        const loadProductsAdmin = () => {
+            const productsRef = dbPunkte.ref('shopartikel');
+            productsRef.on('value', (snapshot) => {
+                productsList.innerHTML = '';
+                const products = snapshot.val();
+                if (products) {
+                    Object.keys(products).forEach(key => {
+                        const product = products[key];
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>
+                                <strong>${product.name}</strong> - ${product.preis} Mausdollar
+                            </span>
+                            <div>
+                                <button class="edit-btn" data-id="${key}" data-name="${product.name}" data-price="${product.preis}" data-delivery="${product.lieferzeit}" data-description="${product.beschreibung}">✏️</button>
+                                <button class="delete-btn" data-id="${key}">x</button>
+                            </div>
+                        `;
+                        productsList.appendChild(li);
+                    });
+                }
+            });
+        };
+
+        saveProductButton.addEventListener('click', () => {
+            const name = productNameInput.value;
+            const price = parseInt(productPriceInput.value);
+            const delivery = productDeliveryInput.value;
+            const description = productDescriptionInput.value;
+            const productId = productIdInput.value;
+
+            if (!name || isNaN(price) || !delivery) {
+                alert('Name, Preis und Lieferzeit sind erforderlich!');
+                return;
+            }
+
+            const productData = { name, preis: price, lieferzeit: delivery, beschreibung: description };
+            const productsRef = dbPunkte.ref('shopartikel');
+
+            if (productId) {
+                productsRef.child(productId).set(productData);
+                alert('Produkt aktualisiert!');
+            } else {
+                productsRef.push(productData);
+                alert('Produkt hinzugefügt!');
+            }
+            
+            productIdInput.value = '';
+            productNameInput.value = '';
+            productPriceInput.value = '';
+            productDeliveryInput.value = '';
+            productDescriptionInput.value = '';
+            saveProductButton.textContent = 'Produkt hinzufügen';
+        });
+
+        productsList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const productId = e.target.dataset.id;
+                dbPunkte.ref(`shopartikel/${productId}`).remove();
+            } else if (e.target.classList.contains('edit-btn')) {
+                const productId = e.target.dataset.id;
+                productIdInput.value = productId;
+                productNameInput.value = e.target.dataset.name;
+                productPriceInput.value = e.target.dataset.price;
+                productDeliveryInput.value = e.target.dataset.delivery;
+                productDescriptionInput.value = e.target.dataset.description;
+                saveProductButton.textContent = 'Produkt aktualisieren';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOrders();
+            loadProductsAdmin();
+        });
+    </script>
 </body>
 </html>
