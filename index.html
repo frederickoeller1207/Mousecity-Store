@@ -1,278 +1,415 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <title>Willkommen im Maus-City Store</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f5f5;
-    }
-    header {
-      padding: 10px 16px;
-      background: #232f3e;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h1 {
-      margin: 0;
-      font-size: 20px;
-    }
-    header button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 20px;
-      cursor: pointer;
-    }
-    .grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      padding: 16px;
-      justify-content: center;
-    }
-    .product {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-      padding: 12px;
-      width: calc(50% - 20px);
-      box-sizing: border-box;
-      cursor: pointer;
-    }
-    .product h3 {
-      margin: 0 0 8px;
-      font-size: 16px;
-    }
-    .overlay, .select-user, .enter-code {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-    }
-    .overlay-content {
-      background: white;
-      padding: 20px;
-      max-width: 300px;
-      width: 100%;
-      border-radius: 10px;
-      position: relative;
-    }
-    .overlay-content h2 {
-      margin-top: 0;
-    }
-    .overlay-content button.close {
-      position: absolute;
-      right: 10px;
-      top: 10px;
-      background: none;
-      border: none;
-      font-size: 20px;
-      cursor: pointer;
-    }
-    .user-list button, .buy-button {
-      display: block;
-      margin: 8px auto;
-      padding: 8px 12px;
-      background: #ff9900;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 16px;
-      color: white;
-    }
-    input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 10px;
-      margin-bottom: 10px;
-    }
-    .message {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Willkommen im Maus-City Store</h1>
-    <button onclick="openAdmin()">a</button>
-  </header>
-
-  <div class="grid" id="productGrid"></div>
-
-  <div class="overlay" id="productOverlay">
-    <div class="overlay-content">
-      <button class="close" onclick="closeOverlay()">×</button>
-      <h2 id="productName"></h2>
-      <p id="productDescription"></p>
-      <p id="productLieferzeit"></p>
-      <button onclick="openUserSelect()">Jetzt kaufen</button>
-    </div>
-  </div>
-
-  <div class="overlay select-user" id="userOverlay">
-    <div class="overlay-content">
-      <button class="close" onclick="closeUserOverlay()">×</button>
-      <h3>Bitte Benutzerkonto auswählen</h3>
-      <div class="user-list" id="userList"></div>
-    </div>
-  </div>
-
-  <div class="overlay enter-code" id="codeOverlay">
-    <div class="overlay-content">
-      <button class="close" onclick="closeCodeOverlay()">×</button>
-      <h3>Sicherheitscode eingeben</h3>
-      <input type="password" id="codeInput" placeholder="Code">
-      <button class="buy-button" onclick="confirmPurchase()">Kaufen</button>
-      <div class="message" id="codeMessage"></div>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getDatabase, ref, onValue, set, get, child, update, push
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-
-    const app1 = initializeApp({
-      databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
-    }, "punkte");
-
-    const app2 = initializeApp({
-      databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app"
-    }, "gesamt");
-
-    const db1 = getDatabase(app1);
-    const db2 = getDatabase(app2);
-
-    const productGrid = document.getElementById("productGrid");
-    const productOverlay = document.getElementById("productOverlay");
-    const productName = document.getElementById("productName");
-    const productDescription = document.getElementById("productDescription");
-    const productLieferzeit = document.getElementById("productLieferzeit");
-
-    const userOverlay = document.getElementById("userOverlay");
-    const userList = document.getElementById("userList");
-
-    const codeOverlay = document.getElementById("codeOverlay");
-    const codeInput = document.getElementById("codeInput");
-    const codeMessage = document.getElementById("codeMessage");
-
-    let selectedProduct = null;
-    let selectedUser = null;
-
-    function closeOverlay() {
-      productOverlay.style.display = "none";
-    }
-
-    function closeUserOverlay() {
-      userOverlay.style.display = "none";
-    }
-
-    function closeCodeOverlay() {
-      codeOverlay.style.display = "none";
-      codeInput.value = "";
-      codeMessage.textContent = "";
-    }
-
-    function openAdmin() {
-      const code = prompt("Admin-Code:");
-      if (code === "121071") location.href = "admin.html";
-    }
-
-    function openUserSelect() {
-      userList.innerHTML = "";
-      selectedUser = null;
-      userOverlay.style.display = "flex";
-
-      const pfade = ["kinder", "auslandskonten"];
-      pfade.forEach(pfad => {
-        const refPath = ref(db1, pfad);
-        onValue(refPath, snapshot => {
-          if (!snapshot.exists()) return;
-          Object.entries(snapshot.val()).forEach(([name, data]) => {
-            const btn = document.createElement("button");
-            btn.textContent = `${name} (${data.punkte || 0})`;
-            btn.onclick = () => {
-              selectedUser = { name, pfad };
-              closeUserOverlay();
-              codeOverlay.style.display = "flex";
-            };
-            userList.appendChild(btn);
-          });
-        }, { onlyOnce: true });
-      });
-    }
-
-    function confirmPurchase() {
-      const code = codeInput.value.trim();
-      if (!selectedUser || !selectedProduct) return;
-
-      const codeRef = ref(db2, `kinder/${selectedUser.name}/code`);
-      get(codeRef).then(snap => {
-        if (!snap.exists() || snap.val() !== code) {
-          codeMessage.textContent = "❌ Code falsch.";
-          return;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Willkommen im Maus-City Store</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f3f3f3;
         }
 
-        const punkteRef = ref(db1, `${selectedUser.pfad}/${selectedUser.name}/punkte`);
-        get(punkteRef).then(pSnap => {
-          const punkte = pSnap.val() || 0;
-          if (punkte < selectedProduct.preis) {
-            codeMessage.textContent = "❌ Nicht genug Punkte.";
-            return;
-          }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #232f3e;
+            color: white;
+            padding: 10px 20px;
+        }
 
-          const newPunkte = punkte - selectedProduct.preis;
-          set(punkteRef, newPunkte);
+        header h1 {
+            margin: 0;
+            font-size: 1.2em;
+        }
 
-          const newOrder = {
-            name: selectedUser.name,
-            artikel: selectedProduct.name,
-            lieferzeit: selectedProduct.lieferzeit || ""
-          };
-          const bestellRef = push(ref(db1, "bestellungen"));
-          set(bestellRef, newOrder);
+        #admin-login-button {
+            background: none;
+            border: 1px solid white;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
 
-          codeMessage.textContent = `✔️ Bestellt! ${selectedProduct.lieferzeit || ""}`;
-          setTimeout(() => {
-            closeCodeOverlay();
-            closeOverlay();
-          }, 1500);
+        main {
+            padding: 20px;
+        }
+
+        #product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            text-align: center;
+        }
+
+        .product-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+
+        .product-item:hover {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .product-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 1em;
+        }
+
+        .product-item p {
+            margin: 0;
+            color: #b12704;
+            font-weight: bold;
+        }
+
+        .product-item small {
+            display: block;
+            margin-top: 5px;
+            color: #555;
+            font-size: 0.8em;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .overlay.hidden {
+            display: none;
+        }
+
+        .overlay-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+            text-align: center;
+        }
+
+        .close-overlay {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.5em;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .overlay-content h2 {
+            margin-top: 0;
+        }
+
+        #buy-button, #confirm-buy-button, #admin-login-confirm-button {
+            background-color: #ffd814;
+            border: 1px solid #fcd200;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        #account-list button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f7f7f7;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        #security-code-input, #admin-code-input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        @media (min-width: 600px) {
+            #product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+    </style>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Willkommen im Maus-City Store</h1>
+        <button id="admin-login-button">a</button>
+    </header>
+
+    <main id="product-grid"></main>
+
+    <div id="product-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2 id="product-name"></h2>
+            <p id="product-description"></p>
+            <p id="product-price"></p>
+            <p id="product-delivery"></p>
+            <button id="buy-button">Jetzt kaufen</button>
+        </div>
+    </div>
+
+    <div id="account-select-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2>Bitte Benutzerkonto auswählen</h2>
+            <div id="account-list"></div>
+        </div>
+    </div>
+
+    <div id="code-entry-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2>Sicherheitscode eingeben</h2>
+            <input type="password" id="security-code-input" placeholder="Sicherheitscode">
+            <button id="confirm-buy-button">Kaufen</button>
+            <p id="error-message" class="error-message"></p>
+        </div>
+    </div>
+
+    <div id="success-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2>Kauf erfolgreich!</h2>
+            <p id="success-message"></p>
+        </div>
+    </div>
+
+    <div id="admin-code-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2>Admin-Code eingeben</h2>
+            <input type="password" id="admin-code-input" placeholder="Admin-Code">
+            <button id="admin-login-confirm-button">Login</button>
+        </div>
+    </div>
+
+    <script>
+        // Firebase-Konfiguration
+        const firebaseConfigPunkte = {
+            apiKey: "DEIN_API_KEY_MUSS_HIER_EINGEFUEGT_WERDEN", // Füge hier deinen API-Key ein
+            databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+        const firebaseConfigGesamt = {
+            apiKey: "DEIN_API_KEY_MUSS_HIER_EINGEFUEGT_WERDEN", // Füge hier deinen API-Key ein
+            databaseURL: "https://gesamt-dae4e-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        const appPunkte = firebase.initializeApp(firebaseConfigPunkte, "punkteApp");
+        const appGesamt = firebase.initializeApp(firebaseConfigGesamt, "gesamtApp");
+        const dbPunkte = appPunkte.database();
+        const dbGesamt = appGesamt.database();
+
+        // Shop-Logik
+        const productGrid = document.getElementById('product-grid');
+        const adminLoginButton = document.getElementById('admin-login-button');
+        const productOverlay = document.getElementById('product-overlay');
+        const accountSelectOverlay = document.getElementById('account-select-overlay');
+        const codeEntryOverlay = document.getElementById('code-entry-overlay');
+        const successOverlay = document.getElementById('success-overlay');
+        const adminCodeOverlay = document.getElementById('admin-code-overlay');
+        const productNameElement = document.getElementById('product-name');
+        const productDescriptionElement = document.getElementById('product-description');
+        const productPriceElement = document.getElementById('product-price');
+        const productDeliveryElement = document.getElementById('product-delivery');
+        const buyButton = document.getElementById('buy-button');
+        const accountList = document.getElementById('account-list');
+        const securityCodeInput = document.getElementById('security-code-input');
+        const confirmBuyButton = document.getElementById('confirm-buy-button');
+        const errorMessage = document.getElementById('error-message');
+        const successMessage = document.getElementById('success-message');
+        const adminCodeInput = document.getElementById('admin-code-input');
+        const adminLoginConfirmButton = document.getElementById('admin-login-confirm-button');
+
+        let selectedProduct = null;
+        let selectedUser = null;
+
+        const hideAllOverlays = () => {
+            document.querySelectorAll('.overlay').forEach(overlay => overlay.classList.add('hidden'));
+            securityCodeInput.value = '';
+            errorMessage.textContent = '';
+        };
+
+        document.querySelectorAll('.close-overlay').forEach(button => {
+            button.addEventListener('click', hideAllOverlays);
         });
-      });
-    }
 
-    function showProductDetails(prod) {
-      selectedProduct = prod;
-      productName.textContent = prod.name;
-      productDescription.textContent = prod.beschreibung || "";
-      productLieferzeit.textContent = prod.lieferzeit || "";
-      productOverlay.style.display = "flex";
-    }
+        const loadProducts = () => {
+            const productsRef = dbPunkte.ref('shopartikel');
+            productsRef.orderByChild('preis').on('value', (snapshot) => {
+                productGrid.innerHTML = '';
+                const products = snapshot.val();
+                if (products) {
+                    Object.keys(products).forEach(key => {
+                        const product = products[key];
+                        const productItem = document.createElement('div');
+                        productItem.className = 'product-item';
+                        productItem.innerHTML = `
+                            <h3>${product.name}</h3>
+                            <p>${product.preis} Mausdollar</p>
+                            <small>${product.lieferzeit || 'Lieferzeit unbekannt'}</small>
+                        `;
+                        productItem.addEventListener('click', () => {
+                            selectedProduct = { id: key, ...product };
+                            showProductOverlay(selectedProduct);
+                        });
+                        productGrid.appendChild(productItem);
+                    });
+                }
+            });
+        };
 
-    const produktRef = ref(db1, "shopartikel");
-    onValue(produktRef, snapshot => {
-      productGrid.innerHTML = "";
-      const produkte = Object.values(snapshot.val() || {});
-      produkte.sort((a, b) => (a.preis || 0) - (b.preis || 0));
-      produkte.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "product";
-        div.innerHTML = `<h3>${p.name}</h3><p>${p.preis} Maus$</p><p>${p.lieferzeit || ""}</p>`;
-        div.onclick = () => showProductDetails(p);
-        productGrid.appendChild(div);
-      });
-    });
-  </script>
+        const showProductOverlay = (product) => {
+            productNameElement.textContent = product.name;
+            productDescriptionElement.textContent = product.beschreibung || 'Keine Beschreibung vorhanden.';
+            productPriceElement.textContent = `${product.preis} Mausdollar`;
+            productDeliveryElement.textContent = product.lieferzeit ? `Lieferzeit: ${product.lieferzeit}` : '';
+            productOverlay.classList.remove('hidden');
+        };
+
+        buyButton.addEventListener('click', () => {
+            productOverlay.classList.add('hidden');
+            loadUserAccounts();
+        });
+
+        const loadUserAccounts = () => {
+            accountList.innerHTML = '';
+            const kinderRef = dbPunkte.ref('kinder');
+            const auslandskontenRef = dbPunkte.ref('auslandskonten');
+
+            Promise.all([kinderRef.once('value'), auslandskontenRef.once('value')])
+                .then(([kinderSnapshot, auslandskontenSnapshot]) => {
+                    const accounts = {};
+                    const kinder = kinderSnapshot.val();
+                    if (kinder) {
+                        Object.keys(kinder).forEach(name => {
+                            accounts[name] = kinder[name];
+                        });
+                    }
+                    const auslandskonten = auslandskontenSnapshot.val();
+                    if (auslandskonten) {
+                        Object.keys(auslandskonten).forEach(name => {
+                            accounts[name] = auslandskonten[name];
+                        });
+                    }
+
+                    if (Object.keys(accounts).length > 0) {
+                        Object.keys(accounts).forEach(name => {
+                            const account = accounts[name];
+                            const accountButton = document.createElement('button');
+                            accountButton.textContent = `${name} (${account.punkte} Mausdollar)`;
+                            accountButton.addEventListener('click', () => {
+                                selectedUser = { name: name, punkte: account.punkte, type: kinder && kinder[name] ? 'kinder' : 'auslandskonten' };
+                                accountSelectOverlay.classList.add('hidden');
+                                codeEntryOverlay.classList.remove('hidden');
+                            });
+                            accountList.appendChild(accountButton);
+                        });
+                        accountSelectOverlay.classList.remove('hidden');
+                    } else {
+                        alert('Keine Konten gefunden.');
+                    }
+                })
+                .catch(error => {
+                    console.error("Fehler beim Laden der Konten:", error);
+                    alert('Fehler beim Laden der Konten.');
+                });
+        };
+
+        confirmBuyButton.addEventListener('click', () => {
+            const enteredCode = securityCodeInput.value;
+            if (!enteredCode) {
+                errorMessage.textContent = 'Bitte Sicherheitscode eingeben.';
+                return;
+            }
+
+            const codeRef = dbGesamt.ref(`kinder/${selectedUser.name}/code`);
+            codeRef.once('value', snapshot => {
+                const correctCode = snapshot.val();
+                if (enteredCode === correctCode) {
+                    if (selectedUser.punkte >= selectedProduct.preis) {
+                        const newPoints = selectedUser.punkte - selectedProduct.preis;
+                        const pointsRef = dbPunkte.ref(`${selectedUser.type}/${selectedUser.name}/punkte`);
+                        pointsRef.set(newPoints)
+                            .then(() => {
+                                const newOrderRef = dbPunkte.ref('bestellungen').push();
+                                newOrderRef.set({
+                                    name: selectedUser.name,
+                                    artikel: selectedProduct.name,
+                                    lieferzeit: selectedProduct.lieferzeit
+                                }).then(() => {
+                                    codeEntryOverlay.classList.add('hidden');
+                                    successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;
+                                    successOverlay.classList.remove('hidden');
+                                });
+                            })
+                            .catch(error => {
+                                console.error("Fehler beim Kauf:", error);
+                                errorMessage.textContent = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+                            });
+                    } else {
+                        errorMessage.textContent = 'Zu wenige Punkte für diesen Kauf.';
+                    }
+                } else {
+                    errorMessage.textContent = 'Falscher Sicherheitscode.';
+                }
+            });
+        });
+
+        adminLoginButton.addEventListener('click', () => {
+            adminCodeOverlay.classList.remove('hidden');
+        });
+
+        adminLoginConfirmButton.addEventListener('click', () => {
+            const enteredAdminCode = adminCodeInput.value;
+            const adminCode = '121071';
+            if (enteredAdminCode === adminCode) {
+                window.location.href = 'admin.html';
+            } else {
+                alert('Falscher Admin-Code.');
+                adminCodeInput.value = '';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
 </body>
 </html>
