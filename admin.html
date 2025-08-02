@@ -221,7 +221,7 @@
             const productsRef = dbPunkte.ref('shopartikel');
 
             if (productId) {
-                productsRef.child(productId).update(productData); // update statt set, um nur geänderte Felder zu aktualisieren
+                productsRef.child(productId).set(productData);
                 alert('Produkt aktualisiert!');
             } else {
                 productsRef.push(productData);
