@@ -35,6 +35,32 @@
             cursor: pointer;
             border-radius: 5px;
         }
+        
+        #category-buttons {
+            display: flex;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            background-color: #f3f3f3;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            gap: 10px;
+        }
+
+        #category-buttons button {
+            background-color: #e0e0e0;
+            border: 1px solid #ccc;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        #category-buttons button.active {
+            background-color: #ffd814;
+            border-color: #fcd200;
+            font-weight: bold;
+        }
 
         main {
             padding: 20px;
@@ -140,12 +166,13 @@
 
         .close-overlay {
             position: absolute;
-            top: 10px;
-            right: 15px;
+            top: 5px;
+            right: 5px;
             font-size: 1.5em;
             background: none;
             border: none;
             cursor: pointer;
+            color: #555;
         }
 
         .overlay-content h2 {
@@ -275,16 +302,21 @@
             padding: 5px 10px;
             font-size: 0.9em;
         }
-
-        .close-overlay {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            font-size: 1.5em;
-            background: none;
-            border: none;
-            cursor: pointer;
+        
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.8em;
+            margin-top: 5px;
         }
+        .status-badge.in-progress { background-color: #2c3e50; }
+        .status-badge.delivered { background-color: #27ae60; }
+        .status-badge.rejected { background-color: #c0392b; }
+        .status-badge.return-pending { background-color: #f39c12; }
+        .status-badge.return-accepted { background-color: #16a085; }
+        .status-badge.return-rejected { background-color: #e74c3c; }
 
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -297,6 +329,8 @@
         <h1 id="store-title">Willkommen im Mousecity Store</h1>
         <button id="my-purchases-button">Meine Käufe</button>
     </header>
+    
+    <div id="category-buttons"></div>
 
 
     <main>
@@ -467,11 +501,16 @@
         
         const successMessage = document.getElementById('success-message');
         
+        const categoryButtonsContainer = document.getElementById('category-buttons');
+
         let selectedProduct = null;
         let selectedUser = null;
         let selectedRating = 0;
         let selectedOrder = null;
         let allProducts = {};
+        let allCategories = {};
+        let allReviews = {};
+        let allOrders = {};
 
         const hideAllOverlays = () => {
             document.querySelectorAll('.overlay').forEach(overlay => overlay.classList.add('hidden'));
@@ -502,6 +541,89 @@
             return starsHtml;
         };
 
+        const loadCategories = () => {
+            const categoriesRef = dbPunkte.ref('kategorien');
+            categoriesRef.on('value', (snapshot) => {
+                allCategories = snapshot.val() || {};
+                renderCategoryButtons();
+            });
+        };
+
+        const renderCategoryButtons = () => {
+            categoryButtonsContainer.innerHTML = '';
+            const allButton = document.createElement('button');
+            allButton.textContent = 'Alle Produkte';
+            allButton.dataset.category = 'all';
+            allButton.className = 'active';
+            allButton.addEventListener('click', () => {
+                filterProducts('all');
+                document.querySelectorAll('#category-buttons button').forEach(btn => btn.classList.remove('active'));
+                allButton.classList.add('active');
+            });
+            categoryButtonsContainer.appendChild(allButton);
+
+            Object.keys(allCategories).forEach(key => {
+                const categoryButton = document.createElement('button');
+                categoryButton.textContent = allCategories[key];
+                categoryButton.dataset.category = key;
+                categoryButton.addEventListener('click', () => {
+                    filterProducts(key);
+                    document.querySelectorAll('#category-buttons button').forEach(btn => btn.classList.remove('active'));
+                    categoryButton.classList.add('active');
+                });
+                categoryButtonsContainer.appendChild(categoryButton);
+            });
+            
+            filterProducts('all'); // Initial alle Produkte anzeigen
+        };
+
+        const filterProducts = (categoryId) => {
+            productContainer.innerHTML = '';
+            let productsToDisplay = Object.values(allProducts).map(p => p.product);
+            
+            if (categoryId !== 'all') {
+                productsToDisplay = productsToDisplay.filter(product => product.kategorie === categoryId);
+            }
+            
+            productsToDisplay.sort((a, b) => a.preis - b.preis);
+
+            productsToDisplay.forEach(product => {
+                const productItem = document.createElement('div');
+                productItem.className = 'product-item';
+                productItem.dataset.productId = product.id;
+
+                if (product.stock <= 0) {
+                    productItem.classList.add('out-of-stock');
+                }
+
+                const reviewsForProduct = Object.values(allReviews).filter(review => review.productId === product.id);
+                const totalRating = reviewsForProduct.reduce((sum, review) => sum + review.rating, 0);
+                const averageRating = reviewsForProduct.length > 0 ? totalRating / reviewsForProduct.length : 0;
+                const roundedRating = Math.round(averageRating);
+
+                productItem.innerHTML = `
+                    ${product.image ? `<img src="${product.image}" alt="${product.name}">` : ''}
+                    <h3>${product.name}</h3>
+                    <div class="rating">
+                        <div class="stars">${renderStars(roundedRating)}</div>
+                        (${reviewsForProduct.length})
+                    </div>
+                    <p class="price">${product.preis} Mausdollar</p>
+                    <p class="delivery-info">24 Stunden Lieferung</p>
+                    <button class="order-button">Bestellen</button>
+                `;
+                
+                productItem.querySelector('.order-button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (product.stock > 0) {
+                        selectedProduct = product;
+                        showProductOverlay(selectedProduct);
+                    }
+                });
+                productContainer.appendChild(productItem);
+            });
+        };
+
         const loadProducts = () => {
             const productsRef = dbPunkte.ref('shopartikel');
             const reviewsRef = dbPunkte.ref('bewertungen');
@@ -511,59 +633,13 @@
                     const products = productsSnapshot.val() || {};
                     const reviews = reviewsSnapshot.val() || {};
                     allProducts = {};
+                    allReviews = reviews;
 
-                    const ratings = {};
-                    Object.keys(reviews).forEach(key => {
-                        const review = reviews[key];
-                        if (!ratings[review.productId]) {
-                            ratings[review.productId] = { sum: 0, count: 0 };
-                        }
-                        ratings[review.productId].sum += review.rating;
-                        ratings[review.productId].count += 1;
+                    Object.keys(products).forEach(key => {
+                        allProducts[key] = { product: {id: key, ...products[key]}, reviews: reviews };
                     });
-                    
-                    productContainer.innerHTML = '';
-                    let productList = Object.keys(products).map(key => ({ id: key, ...products[key] }));
 
-                    // Sortiere Produkte nach Preis
-                    productList.sort((a, b) => a.preis - b.preis);
-
-                    productList.forEach(product => {
-                        const productItem = document.createElement('div');
-                        productItem.className = 'product-item';
-                        
-                        productItem.dataset.productId = product.id;
-
-                        if (product.stock <= 0) {
-                            productItem.classList.add('out-of-stock');
-                        }
-
-                        const productRating = ratings[product.id] ? (ratings[product.id].sum / ratings[product.id].count) : 0;
-                        const reviewCount = ratings[product.id] ? ratings[product.id].count : 0;
-                        const roundedRating = Math.round(productRating * 2) / 2;
-
-                        productItem.innerHTML = `
-                            ${product.image ? `<img src="${product.image}" alt="${product.name}">` : ''}
-                            <h3>${product.name}</h3>
-                            <div class="rating">
-                                <div class="stars">${renderStars(roundedRating)}</div>
-                                (${reviewCount})
-                            </div>
-                            <p class="price">${product.preis} Mausdollar</p>
-                            <p class="delivery-info">24 Stunden Lieferung</p>
-                            <button class="order-button">Bestellen</button>
-                        `;
-                        
-                        productItem.querySelector('.order-button').addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            if (product.stock > 0) {
-                                selectedProduct = product;
-                                showProductOverlay(selectedProduct);
-                            }
-                        });
-                        productContainer.appendChild(productItem);
-                        allProducts[product.id] = { product: product, reviews: reviews };
-                    });
+                    loadCategories(); // Kategorien laden und dann Produkte rendern
                 })
                 .catch(error => {
                     console.error("Fehler beim Laden der Produkte oder Bewertungen:", error);
@@ -577,21 +653,12 @@
             productDeliveryElement.textContent = product.lieferzeit ? `Lieferzeit: ${product.lieferzeit}` : '24 Stunden Lieferung';
             productStockElement.textContent = `Verfügbar: ${product.stock}`;
 
-            const ratings = {};
-            const reviews = allProducts[product.id]?.reviews || {};
-            Object.values(reviews).forEach(review => {
-                if (review.productId === product.id) {
-                    if (!ratings[review.productId]) {
-                        ratings[review.productId] = { sum: 0, count: 0 };
-                    }
-                    ratings[review.productId].sum += review.rating;
-                    ratings[review.productId].count += 1;
-                }
-            });
-            const productRating = ratings[product.id] ? (ratings[product.id].sum / ratings[product.id].count) : 0;
-            const reviewCount = ratings[product.id] ? ratings[product.id].count : 0;
-            const roundedRating = Math.round(productRating * 2) / 2;
-            productRatingDisplay.innerHTML = `<div class="rating"><div class="stars">${renderStars(roundedRating)}</div> (${reviewCount})</div>`;
+            const reviewsForProduct = Object.values(allReviews).filter(review => review.productId === product.id);
+            const totalRating = reviewsForProduct.reduce((sum, review) => sum + review.rating, 0);
+            const averageRating = reviewsForProduct.length > 0 ? totalRating / reviewsForProduct.length : 0;
+            const roundedRating = Math.round(averageRating);
+
+            productRatingDisplay.innerHTML = `<div class="rating"><div class="stars">${renderStars(roundedRating)}</div> (${reviewsForProduct.length})</div>`;
             
             if (product.image) {
                 productOverlayImage.src = product.image;
@@ -622,21 +689,20 @@
 
         const showReviewsForProduct = (productId) => {
             const product = allProducts[productId]?.product;
-            const reviews = allProducts[productId]?.reviews;
             reviewsList.innerHTML = '';
             reviewsProductName.textContent = `Bewertungen für ${product.name}`;
+            
+            const reviewsForProduct = Object.values(allReviews).filter(review => review.productId === productId);
 
-            if (reviews) {
-                Object.values(reviews).forEach(review => {
-                    if (review.productId === productId) {
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            <strong>${renderStars(review.rating)}</strong><br>
-                            <em>"${review.comment}"</em><br>
-                            <small>von ${review.userName} am ${new Date(review.date).toLocaleDateString()}</small>
-                        `;
-                        reviewsList.appendChild(li);
-                    }
+            if (reviewsForProduct.length > 0) {
+                reviewsForProduct.forEach(review => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <strong>${renderStars(review.rating)}</strong><br>
+                        <em>"${review.comment}"</em><br>
+                        <small>von ${review.userName} am ${new Date(review.date).toLocaleDateString()}</small>
+                    `;
+                    reviewsList.appendChild(li);
                 });
             } else {
                 reviewsList.innerHTML = '<p>Noch keine Bewertungen.</p>';
@@ -679,14 +745,10 @@
         const loadPurchases = (userName) => {
             myPurchasesList.innerHTML = '';
             const ordersRef = dbPunkte.ref('bestellungen');
-            const reviewsRef = dbPunkte.ref('bewertungen');
-            const productsRef = dbPunkte.ref('shopartikel');
 
-            Promise.all([ordersRef.once('value'), reviewsRef.once('value'), productsRef.once('value')])
-                .then(([ordersSnapshot, reviewsSnapshot, productsSnapshot]) => {
-                    const allOrders = ordersSnapshot.val() || {};
-                    const allReviews = reviewsSnapshot.val() || {};
-                    const allProducts = productsSnapshot.val() || {};
+            ordersRef.once('value')
+                .then(ordersSnapshot => {
+                    allOrders = ordersSnapshot.val() || {};
 
                     const userPurchases = Object.keys(allOrders)
                         .filter(key => allOrders[key].name === userName)
@@ -699,40 +761,49 @@
                             const li = document.createElement('li');
                             
                             const hasRated = userReviews.some(review => review.productName === purchase.artikel);
-                            const reviewForPurchase = userReviews.find(review => review.productName === purchase.artikel);
                             
                             const returnStatus = purchase.returnStatus || 'keine Anfrage';
-                            const orderStatus = purchase.status || 'unbekannt';
+                            const orderStatus = purchase.status || 'wird geliefert';
                             let returnStatusText = '';
-                            let orderStatusText = `<span>Status: ${orderStatus}</span>`;
+                            let orderStatusBadge = '';
                             let showReturnButton = true;
+                            
+                            switch(orderStatus) {
+                                case 'wird geliefert':
+                                    orderStatusBadge = `<span class="status-badge in-progress">Wird geliefert</span>`;
+                                    showReturnButton = false; // Keine Rückgabeanfrage, solange es noch nicht geliefert ist
+                                    break;
+                                case 'Produkt geliefert':
+                                    orderStatusBadge = `<span class="status-badge delivered">Geliefert</span>`;
+                                    break;
+                                case 'Kauf abgelehnt':
+                                    orderStatusBadge = `<span class="status-badge rejected">Kauf abgelehnt</span>`;
+                                    showReturnButton = false;
+                                    break;
+                            }
                             
                             if (returnStatus !== 'keine Anfrage') {
                                 switch(returnStatus) {
                                     case 'in Bearbeitung':
-                                        returnStatusText = `<span style="color:orange;">Rücksendung: in Bearbeitung</span>`;
+                                        returnStatusText = `<span class="status-badge return-pending">Rücksendung: in Bearbeitung</span>`;
                                         showReturnButton = false;
                                         break;
                                     case 'angenommen':
-                                        returnStatusText = `<span style="color:green;">Rücksendung: angenommen</span>`;
+                                        returnStatusText = `<span class="status-badge return-accepted">Rücksendung: angenommen</span>`;
                                         showReturnButton = false;
                                         break;
                                     case 'abgelehnt':
-                                        returnStatusText = `<span style="color:red;">Rücksendung: abgelehnt</span>`;
+                                        returnStatusText = `<span class="status-badge return-rejected">Rücksendung: abgelehnt</span>`;
                                         showReturnButton = false;
                                         break;
                                 }
                             }
                             
-                            if (orderStatus === 'Kauf abgelehnt') {
-                                showReturnButton = false;
-                            }
-
                             li.innerHTML = `
                                 <span><strong>Produkt:</strong> ${purchase.artikel}</span>
                                 <span><strong>Kaufdatum:</strong> ${new Date(purchase.kaufdatum).toLocaleDateString()}</span>
                                 <span><strong>Gezahlter Preis:</strong> ${purchase.gezahlterPreis} Mausdollar</span>
-                                ${orderStatusText}
+                                ${orderStatusBadge}
                                 ${returnStatusText}
                             `;
                             
@@ -754,7 +825,7 @@
                                 li.appendChild(deleteReviewButton);
                             }
                             
-                            if (showReturnButton && orderStatus === 'Produkt geliefert') {
+                            if (showReturnButton) {
                                 const returnButton = document.createElement('button');
                                 returnButton.textContent = 'Rücksendung anfragen';
                                 returnButton.addEventListener('click', () => {
