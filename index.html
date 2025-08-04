@@ -168,13 +168,22 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            font-size: 1.5em;
-            background: none;
-            border: none;
-            cursor: pointer;
+            font-size: 1em; /* Kleinere Schriftgröße für das X */
+            background-color: #ffd814;
+            border: 1px solid #fcd200;
             color: #555;
+            cursor: pointer;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            line-height: 1;
+            padding: 0;
         }
-
+        
         .overlay-content h2 {
             margin-top: 0;
         }
@@ -574,7 +583,7 @@
                 categoryButtonsContainer.appendChild(categoryButton);
             });
             
-            filterProducts('all'); // Initial alle Produkte anzeigen
+            filterProducts('all');
         };
 
         const filterProducts = (categoryId) => {
@@ -639,7 +648,7 @@
                         allProducts[key] = { product: {id: key, ...products[key]}, reviews: reviews };
                     });
 
-                    loadCategories(); // Kategorien laden und dann Produkte rendern
+                    loadCategories();
                 })
                 .catch(error => {
                     console.error("Fehler beim Laden der Produkte oder Bewertungen:", error);
@@ -688,7 +697,7 @@
         });
 
         const showReviewsForProduct = (productId) => {
-            const product = allProducts[productId]?.product;
+            const product = Object.values(allProducts).find(p => p.product.id === productId)?.product;
             reviewsList.innerHTML = '';
             reviewsProductName.textContent = `Bewertungen für ${product.name}`;
             
@@ -764,14 +773,14 @@
                             
                             const returnStatus = purchase.returnStatus || 'keine Anfrage';
                             const orderStatus = purchase.status || 'wird geliefert';
-                            let returnStatusText = '';
+                            let returnStatusBadge = '';
                             let orderStatusBadge = '';
                             let showReturnButton = true;
                             
                             switch(orderStatus) {
                                 case 'wird geliefert':
                                     orderStatusBadge = `<span class="status-badge in-progress">Wird geliefert</span>`;
-                                    showReturnButton = false; // Keine Rückgabeanfrage, solange es noch nicht geliefert ist
+                                    showReturnButton = false;
                                     break;
                                 case 'Produkt geliefert':
                                     orderStatusBadge = `<span class="status-badge delivered">Geliefert</span>`;
@@ -785,15 +794,15 @@
                             if (returnStatus !== 'keine Anfrage') {
                                 switch(returnStatus) {
                                     case 'in Bearbeitung':
-                                        returnStatusText = `<span class="status-badge return-pending">Rücksendung: in Bearbeitung</span>`;
+                                        returnStatusBadge = `<span class="status-badge return-pending">Rücksendung: in Bearbeitung</span>`;
                                         showReturnButton = false;
                                         break;
                                     case 'angenommen':
-                                        returnStatusText = `<span class="status-badge return-accepted">Rücksendung: angenommen</span>`;
+                                        returnStatusBadge = `<span class="status-badge return-accepted">Rücksendung: angenommen</span>`;
                                         showReturnButton = false;
                                         break;
                                     case 'abgelehnt':
-                                        returnStatusText = `<span class="status-badge return-rejected">Rücksendung: abgelehnt</span>`;
+                                        returnStatusBadge = `<span class="status-badge return-rejected">Rücksendung: abgelehnt</span>`;
                                         showReturnButton = false;
                                         break;
                                 }
@@ -804,7 +813,7 @@
                                 <span><strong>Kaufdatum:</strong> ${new Date(purchase.kaufdatum).toLocaleDateString()}</span>
                                 <span><strong>Gezahlter Preis:</strong> ${purchase.gezahlterPreis} Mausdollar</span>
                                 ${orderStatusBadge}
-                                ${returnStatusText}
+                                ${returnStatusBadge}
                             `;
                             
                             if (orderStatus === 'Produkt geliefert' && !hasRated) {
