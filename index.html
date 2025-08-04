@@ -152,7 +152,7 @@
             margin-top: 0;
         }
 
-        #buy-button, #confirm-buy-button, #admin-login-confirm-button, #submit-review-button, #my-purchases-confirm-button {
+        .overlay-content button {
             background-color: #ffd814;
             border: 1px solid #fcd200;
             padding: 10px 20px;
@@ -183,7 +183,16 @@
             cursor: pointer;
         }
 
-        #security-code-input, #review-comment-input, #my-purchases-code-input {
+        .admin-login {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #ccc;
+            cursor: pointer;
+        }
+
+        #security-code-input, #review-comment-input, #my-purchases-code-input, #return-reason-input {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
@@ -243,21 +252,34 @@
             margin-bottom: 15px;
             border-radius: 8px;
         }
-        #reviews-section {
-            margin-top: 20px;
+        
+        #read-reviews-button {
+            margin-top: 5px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            color: #555;
+        }
+
+        #my-purchases-list li, #reviews-list li {
             text-align: left;
-        }
-        #reviews-list {
-            list-style: none;
-            padding: 0;
-        }
-        #reviews-list li {
             background-color: #f9f9f9;
             border: 1px solid #eee;
             padding: 10px;
             margin-bottom: 10px;
             border-radius: 5px;
+            display: flex;
+            flex-direction: column;
         }
+
+        #my-purchases-list button {
+            width: auto;
+            margin-top: 5px;
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -287,7 +309,16 @@
             <p id="product-delivery"></p>
             <small id="product-stock"></small>
             
+            <button id="read-reviews-button">Bewertungen lesen</button>
             <button id="buy-button">Jetzt kaufen</button>
+        </div>
+    </div>
+    
+    <div id="reviews-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2 id="reviews-product-name"></h2>
+            <ul id="reviews-list"></ul>
         </div>
     </div>
     
@@ -307,7 +338,6 @@
             <button id="submit-review-button">Bewertung abschicken</button>
         </div>
     </div>
-
 
     <div id="account-select-overlay" class="overlay hidden">
         <div class="overlay-content">
@@ -348,6 +378,16 @@
             </div>
         </div>
     </div>
+    
+    <div id="return-request-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2>Rücksendung anfragen</h2>
+            <p>Geben Sie den Grund für die Rücksendung an:</p>
+            <textarea id="return-reason-input" placeholder="Grund für die Rücksendung..."></textarea>
+            <button id="submit-return-request-button">Anfrage absenden</button>
+        </div>
+    </div>
 
 
     <div id="success-overlay" class="overlay hidden">
@@ -357,6 +397,18 @@
             <p id="success-message"></p>
         </div>
     </div>
+    
+    <div id="admin-code-overlay" class="overlay hidden">
+        <div class="overlay-content">
+            <button class="close-overlay">×</button>
+            <h2>Admin-Code eingeben</h2>
+            <input type="password" id="admin-code-input" placeholder="Admin-Code">
+            <button id="admin-login-confirm-button">Login</button>
+        </div>
+    </div>
+    
+    <span class="admin-login">Admin-Login</span>
+
 
     <script>
         // Firebase-Konfiguration
@@ -377,12 +429,15 @@
         // Shop-Logik
         const productContainer = document.getElementById('product-container');
         const productOverlay = document.getElementById('product-overlay');
+        const reviewsOverlay = document.getElementById('reviews-overlay');
         const reviewOverlay = document.getElementById('review-overlay');
         const accountSelectOverlay = document.getElementById('account-select-overlay');
         const codeEntryOverlay = document.getElementById('code-entry-overlay');
         const myPurchasesCodeOverlay = document.getElementById('my-purchases-code-overlay');
         const myPurchasesOverlay = document.getElementById('my-purchases-overlay');
+        const returnRequestOverlay = document.getElementById('return-request-overlay');
         const successOverlay = document.getElementById('success-overlay');
+        const adminCodeOverlay = document.getElementById('admin-code-overlay');
 
         const productNameElement = document.getElementById('product-name');
         const productRatingDisplay = document.getElementById('product-rating-display');
@@ -392,12 +447,15 @@
         const productStockElement = document.getElementById('product-stock');
         const buyButton = document.getElementById('buy-button');
         const productOverlayImage = document.getElementById('product-overlay-image');
-
+        const readReviewsButton = document.getElementById('read-reviews-button');
+        
+        const reviewsProductName = document.getElementById('reviews-product-name');
+        const reviewsList = document.getElementById('reviews-list');
         const reviewProductName = document.getElementById('review-product-name');
         const newReviewStars = document.getElementById('new-review-stars');
         const reviewCommentInput = document.getElementById('review-comment-input');
         const submitReviewButton = document.getElementById('submit-review-button');
-
+        
         const accountSelectTitle = document.getElementById('account-select-title');
         const accountList = document.getElementById('account-list');
 
@@ -411,12 +469,21 @@
         const myPurchasesErrorMessage = document.getElementById('my-purchases-error-message');
         const myPurchasesList = document.getElementById('my-purchases-list');
 
+        const returnReasonInput = document.getElementById('return-reason-input');
+        const submitReturnRequestButton = document.getElementById('submit-return-request-button');
+        
         const successMessage = document.getElementById('success-message');
+        
+        const adminLoginButton = document.querySelector('.admin-login');
+        const adminCodeInput = document.getElementById('admin-code-input');
+        const adminLoginConfirmButton = document.getElementById('admin-login-confirm-button');
+        
 
         let selectedProduct = null;
         let selectedUser = null;
         let selectedRating = 0;
-        let productsWithReviews = {};
+        let selectedOrder = null;
+        let allProducts = {};
 
         const hideAllOverlays = () => {
             document.querySelectorAll('.overlay').forEach(overlay => overlay.classList.add('hidden'));
@@ -424,6 +491,7 @@
             errorMessage.textContent = '';
             myPurchasesCodeInput.value = '';
             myPurchasesErrorMessage.textContent = '';
+            returnReasonInput.value = '';
             selectedRating = 0;
             document.querySelectorAll('#new-review-stars .star').forEach(star => star.classList.remove('filled'));
             reviewCommentInput.value = '';
@@ -432,15 +500,29 @@
         document.querySelectorAll('.close-overlay').forEach(button => {
             button.addEventListener('click', hideAllOverlays);
         });
+        
+        adminLoginButton.addEventListener('click', () => {
+            adminCodeOverlay.classList.remove('hidden');
+        });
 
-        // Funktion, um Stern-Rating zu rendern
+        adminLoginConfirmButton.addEventListener('click', () => {
+            const enteredAdminCode = adminCodeInput.value;
+            const adminCode = '121071';
+            if (enteredAdminCode === adminCode) {
+                window.location.href = 'admin.html';
+            } else {
+                alert('Falscher Admin-Code.');
+                adminCodeInput.value = '';
+            }
+        });
+
+
         const renderStars = (rating) => {
             const fullStars = Math.floor(rating);
             let starsHtml = '⭐'.repeat(fullStars);
             return starsHtml;
         };
 
-        // Funktion zum Laden der Produkte mit Bewertungen
         const loadProducts = () => {
             const productsRef = dbPunkte.ref('shopartikel');
             const reviewsRef = dbPunkte.ref('bewertungen');
@@ -449,11 +531,11 @@
                 .then(([productsSnapshot, reviewsSnapshot]) => {
                     const products = productsSnapshot.val() || {};
                     const reviews = reviewsSnapshot.val() || {};
-                    productsWithReviews = {};
+                    allProducts = {};
 
-                    // Berechne die durchschnittliche Bewertung für jedes Produkt
                     const ratings = {};
-                    Object.values(reviews).forEach(review => {
+                    Object.keys(reviews).forEach(key => {
+                        const review = reviews[key];
                         if (!ratings[review.productId]) {
                             ratings[review.productId] = { sum: 0, count: 0 };
                         }
@@ -468,17 +550,15 @@
                         const productItem = document.createElement('div');
                         productItem.className = 'product-item';
                         
-                        // Fügen Sie die ID des Produkts als data-Attribut hinzu
                         productItem.dataset.productId = product.id;
 
                         if (product.stock <= 0) {
                             productItem.classList.add('out-of-stock');
                         }
 
-                        // Durchschnittliche Bewertung und Anzahl der Bewertungen
                         const productRating = ratings[product.id] ? (ratings[product.id].sum / ratings[product.id].count) : 0;
                         const reviewCount = ratings[product.id] ? ratings[product.id].count : 0;
-                        const roundedRating = Math.round(productRating * 2) / 2; // Runden auf halbe Sterne
+                        const roundedRating = Math.round(productRating * 2) / 2;
 
                         productItem.innerHTML = `
                             ${product.image ? `<img src="${product.image}" alt="${product.name}">` : ''}
@@ -492,14 +572,15 @@
                             <button class="order-button">Bestellen</button>
                         `;
                         
-                        productItem.querySelector('.order-button').addEventListener('click', () => {
+                        productItem.querySelector('.order-button').addEventListener('click', (e) => {
+                            e.stopPropagation();
                             if (product.stock > 0) {
                                 selectedProduct = product;
                                 showProductOverlay(selectedProduct);
                             }
                         });
                         productContainer.appendChild(productItem);
-                        productsWithReviews[product.id] = { product: product, reviews: reviews };
+                        allProducts[product.id] = { product: product, reviews: reviews };
                     });
                 })
                 .catch(error => {
@@ -515,7 +596,8 @@
             productStockElement.textContent = `Verfügbar: ${product.stock}`;
 
             const ratings = {};
-            Object.values(productsWithReviews[product.id].reviews).forEach(review => {
+            const reviews = allProducts[product.id]?.reviews || {};
+            Object.values(reviews).forEach(review => {
                 if (review.productId === product.id) {
                     if (!ratings[review.productId]) {
                         ratings[review.productId] = { sum: 0, count: 0 };
@@ -543,15 +625,47 @@
                 buyButton.disabled = true;
                 buyButton.textContent = 'Momentan nicht verfügbar';
             }
-
+            
+            readReviewsButton.dataset.productId = product.id;
             productOverlay.classList.remove('hidden');
+        };
+
+        readReviewsButton.addEventListener('click', () => {
+            const productId = readReviewsButton.dataset.productId;
+            if (productId) {
+                hideAllOverlays();
+                showReviewsForProduct(productId);
+            }
+        });
+
+        const showReviewsForProduct = (productId) => {
+            const product = allProducts[productId]?.product;
+            const reviews = allProducts[productId]?.reviews;
+            reviewsList.innerHTML = '';
+            reviewsProductName.textContent = `Bewertungen für ${product.name}`;
+
+            if (reviews) {
+                Object.values(reviews).forEach(review => {
+                    if (review.productId === productId) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <strong>${'⭐'.repeat(review.rating)}</strong><br>
+                            <em>"${review.comment}"</em><br>
+                            <small>von ${review.userName} am ${new Date(review.date).toLocaleDateString()}</small>
+                        `;
+                        reviewsList.appendChild(li);
+                    }
+                });
+            } else {
+                reviewsList.innerHTML = '<p>Noch keine Bewertungen.</p>';
+            }
+            reviewsOverlay.classList.remove('hidden');
         };
 
         buyButton.addEventListener('click', () => {
             productOverlay.classList.add('hidden');
             loadUserAccountsForPurchase();
         });
-
 
         // Meine Käufe Logik
         myPurchasesButton.addEventListener('click', () => {
@@ -571,61 +685,87 @@
                 const correctCode = snapshot.val();
                 if (enteredCode === correctCode) {
                     myPurchasesCodeOverlay.classList.add('hidden');
-                    loadPurchasesAndReviews(selectedUser.name);
+                    loadPurchases(selectedUser.name);
                 } else {
                     myPurchasesErrorMessage.textContent = 'Falscher Sicherheitscode.';
                 }
             });
         });
 
-        const loadPurchasesAndReviews = (userName) => {
+        const loadPurchases = (userName) => {
             myPurchasesList.innerHTML = '';
             const ordersRef = dbPunkte.ref('bestellungen');
             const reviewsRef = dbPunkte.ref('bewertungen');
-            const productsRef = dbPunkte.ref('shopartikel');
 
-            Promise.all([ordersRef.once('value'), reviewsRef.once('value'), productsRef.once('value')])
-                .then(([ordersSnapshot, reviewsSnapshot, productsSnapshot]) => {
+            Promise.all([ordersRef.once('value'), reviewsRef.once('value')])
+                .then(([ordersSnapshot, reviewsSnapshot]) => {
                     const allOrders = ordersSnapshot.val() || {};
                     const allReviews = reviewsSnapshot.val() || {};
-                    const allProducts = productsSnapshot.val() || {};
 
-                    const userPurchases = Object.values(allOrders).filter(order => order.name === userName);
-                    const ratedProductNames = Object.values(allReviews).filter(review => review.userName === userName).map(review => review.productName);
+                    const userPurchases = Object.keys(allOrders)
+                        .filter(key => allOrders[key].name === userName)
+                        .map(key => ({ id: key, ...allOrders[key] }));
 
-                    const uniquePurchases = userPurchases.reduce((acc, current) => {
-                        if (!acc.some(item => item.artikel === current.artikel)) {
-                            acc.push(current);
-                        }
-                        return acc;
-                    }, []);
+                    const userReviews = Object.values(allReviews).filter(review => review.userName === userName).map(review => review.productName);
 
-                    if (uniquePurchases.length > 0) {
-                        uniquePurchases.forEach(purchase => {
+                    if (userPurchases.length > 0) {
+                        userPurchases.forEach(purchase => {
                             const li = document.createElement('li');
-                            const hasRated = ratedProductNames.includes(purchase.artikel);
+                            const hasRated = userReviews.includes(purchase.artikel);
                             
-                            let productID = null;
-                            for (const key in allProducts) {
-                                if (allProducts[key].name === purchase.artikel) {
-                                    productID = key;
+                            const returnStatus = purchase.returnStatus || 'keine Anfrage';
+                            let returnStatusText = '';
+                            let showReturnButton = true;
+
+                            switch(returnStatus) {
+                                case 'in Bearbeitung':
+                                    returnStatusText = `<span style="color:orange;">Rücksendung: in Bearbeitung</span>`;
+                                    showReturnButton = false;
                                     break;
-                                }
+                                case 'angenommen':
+                                    returnStatusText = `<span style="color:green;">Rücksendung: angenommen</span>`;
+                                    showReturnButton = false;
+                                    break;
+                                case 'abgelehnt':
+                                    returnStatusText = `<span style="color:red;">Rücksendung: abgelehnt</span>`;
+                                    showReturnButton = false;
+                                    break;
                             }
                             
+                            li.innerHTML = `
+                                <span><strong>Produkt:</strong> ${purchase.artikel}</span>
+                                <span><strong>Kaufdatum:</strong> ${new Date(purchase.kaufdatum).toLocaleDateString()}</span>
+                                <span><strong>Gezahlter Preis:</strong> ${purchase.gezahlterPreis} Mausdollar</span>
+                                ${returnStatusText}
+                            `;
+                            
                             if (hasRated) {
-                                li.innerHTML = `
-                                    <span>${purchase.artikel} - <small>Bereits bewertet</small></span>
-                                `;
+                                const deleteReviewButton = document.createElement('button');
+                                deleteReviewButton.textContent = 'Bewertung löschen';
+                                deleteReviewButton.style.backgroundColor = 'red';
+                                deleteReviewButton.style.borderColor = 'darkred';
+                                deleteReviewButton.addEventListener('click', () => {
+                                    deleteReview(purchase.artikel, userName);
+                                });
+                                li.appendChild(deleteReviewButton);
                             } else {
                                 const rateButton = document.createElement('button');
                                 rateButton.textContent = 'Bewerten';
                                 rateButton.addEventListener('click', () => {
-                                    showReviewOverlay(purchase.artikel, productID);
+                                    showReviewOverlayForPurchase(purchase.artikel);
                                 });
-                                li.innerHTML = `<span>${purchase.artikel}</span>`;
                                 li.appendChild(rateButton);
                             }
+                            
+                            if (showReturnButton) {
+                                const returnButton = document.createElement('button');
+                                returnButton.textContent = 'Rücksendung anfragen';
+                                returnButton.addEventListener('click', () => {
+                                    showReturnRequestOverlay(purchase);
+                                });
+                                li.appendChild(returnButton);
+                            }
+
                             myPurchasesList.appendChild(li);
                         });
                     } else {
@@ -635,17 +775,78 @@
                 });
         };
         
-        const showReviewOverlay = (productName, productId) => {
+        const deleteReview = (productName, userName) => {
+            const reviewsRef = dbPunkte.ref('bewertungen');
+            reviewsRef.orderByChild('userName').equalTo(userName).once('value', snapshot => {
+                const reviews = snapshot.val();
+                if (reviews) {
+                    const reviewKey = Object.keys(reviews).find(key => reviews[key].productName === productName);
+                    if (reviewKey) {
+                        dbPunkte.ref(`bewertungen/${reviewKey}`).remove()
+                            .then(() => {
+                                alert('Bewertung erfolgreich gelöscht!');
+                                hideAllOverlays();
+                                loadProducts(); // Produkte neu laden, um Stern-Bewertung zu aktualisieren
+                            })
+                            .catch(error => {
+                                console.error("Fehler beim Löschen der Bewertung:", error);
+                                alert('Fehler beim Löschen der Bewertung.');
+                            });
+                    }
+                }
+            });
+        };
+        
+        const showReviewOverlayForPurchase = (productName) => {
             hideAllOverlays();
             reviewProductName.textContent = productName;
-            reviewOverlay.dataset.productId = productId;
-            reviewOverlay.classList.remove('hidden');
+            const product = Object.values(allProducts).find(p => p.product.name === productName)?.product;
+            if (product) {
+                selectedProduct = product;
+                reviewOverlay.classList.remove('hidden');
+            } else {
+                alert('Produkt nicht gefunden.');
+            }
         };
+
+        const showReturnRequestOverlay = (purchase) => {
+            hideAllOverlays();
+            selectedOrder = purchase;
+            returnRequestOverlay.classList.remove('hidden');
+        };
+
+        submitReturnRequestButton.addEventListener('click', () => {
+            const reason = returnReasonInput.value.trim();
+            if (!reason) {
+                alert('Bitte geben Sie einen Grund für die Rücksendung an.');
+                return;
+            }
+
+            const returnRequestRef = dbPunkte.ref('ruecksendeanfragen').push();
+            returnRequestRef.set({
+                orderId: selectedOrder.id,
+                userName: selectedOrder.name,
+                userType: selectedUser.type,
+                productName: selectedOrder.artikel,
+                purchasePrice: selectedOrder.gezahlterPreis,
+                reason: reason,
+                date: new Date().toISOString()
+            }).then(() => {
+                // Update order status
+                dbPunkte.ref(`bestellungen/${selectedOrder.id}/returnStatus`).set('in Bearbeitung');
+                alert('Rückgabeanfrage wurde gesendet.');
+                hideAllOverlays();
+                loadPurchases(selectedUser.name);
+            }).catch(error => {
+                console.error('Fehler beim Senden der Rückgabeanfrage:', error);
+                alert('Fehler beim Senden der Rückgabeanfrage.');
+            });
+        });
 
         // Bewertung senden
         submitReviewButton.addEventListener('click', () => {
             const comment = reviewCommentInput.value.trim();
-            const productId = reviewOverlay.dataset.productId;
+            const productId = selectedProduct.id;
 
             if (selectedRating === 0) {
                 alert('Bitte wähle eine Stern-Bewertung aus.');
@@ -659,10 +860,11 @@
             const newReviewRef = dbPunkte.ref('bewertungen').push();
             newReviewRef.set({
                 productId: productId,
-                productName: reviewProductName.textContent,
+                productName: selectedProduct.name,
                 userName: selectedUser.name,
                 rating: selectedRating,
-                comment: comment
+                comment: comment,
+                date: new Date().toISOString()
             }).then(() => {
                 alert('Bewertung erfolgreich abgegeben!');
                 hideAllOverlays();
@@ -798,12 +1000,14 @@
                                 newOrderRef.set({
                                     name: selectedUser.name,
                                     artikel: selectedProduct.name,
-                                    lieferzeit: selectedProduct.lieferzeit
+                                    lieferzeit: selectedProduct.lieferzeit,
+                                    kaufdatum: new Date().toISOString(),
+                                    gezahlterPreis: selectedProduct.preis
                                 }).then(() => {
                                     codeEntryOverlay.classList.add('hidden');
                                     successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;
                                     successOverlay.classList.remove('hidden');
-                                    loadProducts(); // Produkte neu laden, um Bestand zu aktualisieren
+                                    loadProducts();
                                 });
                             })
                             .catch(error => {
