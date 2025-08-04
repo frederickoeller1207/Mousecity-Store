@@ -306,7 +306,6 @@
                 const userName = e.target.dataset.userName;
                 const userType = e.target.dataset.userType;
                 
-                // Refund the points
                 dbPunkte.ref(`${userType}/${userName}`).once('value', snapshot => {
                     const user = snapshot.val();
                     if (user) {
