@@ -78,7 +78,7 @@
             color: #3498db;
         }
 
-        #product-form input, #product-form textarea {
+        #product-form input, #product-form textarea, #product-form select {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
@@ -96,6 +96,17 @@
             font-size: 1em;
             width: 100%;
             margin-top: 15px;
+        }
+
+        /* Neue Styles für die neuen Funktionen */
+        #review-list li {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .review-text {
+            font-style: italic;
+            margin-top: 5px;
+            margin-bottom: 10px;
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -117,6 +128,17 @@
         <hr>
 
         <section class="admin-section">
+            <h2>Kategorien-Verwaltung</h2>
+            <div id="category-form">
+                <input type="text" id="category-name-input" placeholder="Neue Kategorie">
+                <button id="add-category-button">Kategorie hinzufügen</button>
+            </div>
+            <ul id="category-list"></ul>
+        </section>
+        
+        <hr>
+
+        <section class="admin-section">
             <h2>Produktverwaltung</h2>
             <div id="product-form">
                 <input type="hidden" id="product-id">
@@ -124,17 +146,28 @@
                 <input type="number" id="product-price-input" placeholder="Preis (Mausdollar)" required>
                 <input type="number" id="product-stock-input" placeholder="Bestand (Anzahl)" required>
                 <input type="text" id="product-delivery-input" placeholder="Lieferzeit" required>
+                <input type="text" id="product-image-input" placeholder="Bild-URL (Link zum Bild)">
                 <textarea id="product-description-input" placeholder="Beschreibung (optional)"></textarea>
+                <select id="product-category-select">
+                    <option value="">-- Kategorie auswählen --</option>
+                </select>
                 <button id="save-product-button">Produkt hinzufügen</button>
             </div>
             <ul id="products-list"></ul>
+        </section>
+
+        <hr>
+
+        <section class="admin-section">
+            <h2>Bewertungen</h2>
+            <ul id="review-list"></ul>
         </section>
     </main>
 
     <script>
         // Firebase-Konfiguration
         const firebaseConfigPunkte = {
-            apiKey: "DEIN_API_KEY_MUSS_HIER_EINGEFUEGT_WERDEN", // Füge hier deinen API-Key ein
+            apiKey: "DEIN_API_KEY_MUSS_HIER_EINGEFUEGT_WERDEN",
             databaseURL: "https://punkte-45c20-default-rtdb.europe-west1.firebasedatabase.app"
         };
         const appPunkte = firebase.initializeApp(firebaseConfigPunkte);
@@ -150,6 +183,59 @@
         const productStockInput = document.getElementById('product-stock-input');
         const productDeliveryInput = document.getElementById('product-delivery-input');
         const productDescriptionInput = document.getElementById('product-description-input');
+        const productImageInput = document.getElementById('product-image-input');
+        const productCategorySelect = document.getElementById('product-category-select');
+
+        const categoryNameInput = document.getElementById('category-name-input');
+        const addCategoryButton = document.getElementById('add-category-button');
+        const categoryList = document.getElementById('category-list');
+
+        const reviewList = document.getElementById('review-list');
+
+        // Funktion zum Laden der Kategorien
+        const loadCategories = () => {
+            const categoriesRef = dbPunkte.ref('kategorien');
+            categoriesRef.on('value', (snapshot) => {
+                categoryList.innerHTML = '';
+                productCategorySelect.innerHTML = '<option value="">-- Kategorie auswählen --</option>';
+                const categories = snapshot.val();
+                if (categories) {
+                    Object.keys(categories).forEach(key => {
+                        const categoryName = categories[key];
+                        // Liste für die Verwaltung
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>${categoryName}</span>
+                            <button class="delete-btn" data-id="${key}">x</button>
+                        `;
+                        categoryList.appendChild(li);
+
+                        // Dropdown für Produkte
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = categoryName;
+                        productCategorySelect.appendChild(option);
+                    });
+                }
+            });
+        };
+
+        // Event-Listener zum Hinzufügen einer Kategorie
+        addCategoryButton.addEventListener('click', () => {
+            const categoryName = categoryNameInput.value.trim();
+            if (categoryName) {
+                dbPunkte.ref('kategorien').push(categoryName);
+                categoryNameInput.value = '';
+            }
+        });
+
+        // Event-Listener zum Löschen einer Kategorie
+        categoryList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const categoryId = e.target.dataset.id;
+                dbPunkte.ref(`kategorien/${categoryId}`).remove();
+            }
+        });
 
         const loadOrders = () => {
             const ordersRef = dbPunkte.ref('bestellungen');
@@ -194,7 +280,7 @@
                                 <strong>${product.name}</strong> - ${product.preis} Mausdollar (Bestand: ${product.stock || 0})
                             </span>
                             <div>
-                                <button class="edit-btn" data-id="${key}" data-name="${product.name}" data-price="${product.preis}" data-stock="${product.stock || 0}" data-delivery="${product.lieferzeit}" data-description="${product.beschreibung}">✏️</button>
+                                <button class="edit-btn" data-id="${key}" data-name="${product.name}" data-price="${product.preis}" data-stock="${product.stock || 0}" data-delivery="${product.lieferzeit}" data-description="${product.beschreibung || ''}" data-image="${product.image || ''}" data-category="${product.kategorie || ''}">✏️</button>
                                 <button class="delete-btn" data-id="${key}">x</button>
                             </div>
                         `;
@@ -210,14 +296,16 @@
             const stock = parseInt(productStockInput.value);
             const delivery = productDeliveryInput.value;
             const description = productDescriptionInput.value;
+            const image = productImageInput.value;
+            const category = productCategorySelect.value;
             const productId = productIdInput.value;
 
-            if (!name || isNaN(price) || isNaN(stock) || !delivery) {
-                alert('Name, Preis, Bestand und Lieferzeit sind erforderlich!');
+            if (!name || isNaN(price) || isNaN(stock) || !delivery || !category) {
+                alert('Name, Preis, Bestand, Lieferzeit und Kategorie sind erforderlich!');
                 return;
             }
 
-            const productData = { name, preis: price, stock: stock, lieferzeit: delivery, beschreibung: description };
+            const productData = { name, preis: price, stock: stock, lieferzeit: delivery, beschreibung: description, image: image, kategorie: category };
             const productsRef = dbPunkte.ref('shopartikel');
 
             if (productId) {
@@ -234,6 +322,8 @@
             productStockInput.value = '';
             productDeliveryInput.value = '';
             productDescriptionInput.value = '';
+            productImageInput.value = '';
+            productCategorySelect.value = '';
             saveProductButton.textContent = 'Produkt hinzufügen';
         });
 
@@ -249,13 +339,50 @@
                 productStockInput.value = e.target.dataset.stock;
                 productDeliveryInput.value = e.target.dataset.delivery;
                 productDescriptionInput.value = e.target.dataset.description;
+                productImageInput.value = e.target.dataset.image;
+                productCategorySelect.value = e.target.dataset.category;
                 saveProductButton.textContent = 'Produkt aktualisieren';
+            }
+        });
+        
+        // Funktion zum Laden der Bewertungen
+        const loadReviews = () => {
+            const reviewsRef = dbPunkte.ref('bewertungen');
+            reviewsRef.on('value', (snapshot) => {
+                reviewList.innerHTML = '';
+                const reviews = snapshot.val();
+                if (reviews) {
+                    Object.keys(reviews).forEach(key => {
+                        const review = reviews[key];
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>
+                                <strong>Produkt:</strong> ${review.productName} <br>
+                                <strong>Von:</strong> ${review.userName} <br>
+                                <strong>Bewertung:</strong> ${'⭐'.repeat(review.rating)} <br>
+                                <span class="review-text">${review.comment}</span>
+                            </span>
+                            <button class="delete-btn" data-id="${key}">x</button>
+                        `;
+                        reviewList.appendChild(li);
+                    });
+                }
+            });
+        };
+
+        // Event-Listener zum Löschen von Bewertungen
+        reviewList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const reviewId = e.target.dataset.id;
+                dbPunkte.ref(`bewertungen/${reviewId}`).remove();
             }
         });
 
         document.addEventListener('DOMContentLoaded', () => {
             loadOrders();
+            loadCategories();
             loadProductsAdmin();
+            loadReviews();
         });
     </script>
 </body>
