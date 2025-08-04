@@ -416,7 +416,7 @@
         </div>
         <div class="overlay-content">
             <h2>Sicherheitscode eingeben</h2>
-            <input type="password" id="security-code-input" placeholder="Sicherheitscode">
+            <input type="tel" id="security-code-input" placeholder="Sicherheitscode">
             <button id="confirm-buy-button">Kaufen</button>
             <p id="error-message" class="error-message"></p>
         </div>
@@ -428,7 +428,7 @@
         </div>
         <div class="overlay-content">
             <h2>Sicherheitscode eingeben</h2>
-            <input type="password" id="my-purchases-code-input" placeholder="Sicherheitscode">
+            <input type="tel" id="my-purchases-code-input" placeholder="Sicherheitscode">
             <button id="my-purchases-confirm-button">Anzeigen</button>
             <p id="my-purchases-error-message" class="error-message"></p>
         </div>
@@ -748,8 +748,7 @@
 
         // Meine Käufe Logik
         myPurchasesButton.addEventListener('click', () => {
-            myPurchasesCodeInput.value = '';
-            myPurchasesErrorMessage.textContent = '';
+            hideAllOverlays();
             accountSelectTitle.textContent = 'Benutzerkonto auswählen:';
             loadUserAccountsForPurchases();
         });
@@ -1017,6 +1016,7 @@
                                 selectedUser = { name: name, punkte: account.punkte, type: account.type };
                                 accountSelectOverlay.classList.add('hidden');
                                 codeEntryOverlay.classList.remove('hidden');
+                                document.getElementById('security-code-input').focus();
                             });
                             accountList.appendChild(accountButton);
                         });
@@ -1059,6 +1059,7 @@
                                 selectedUser = { name: name, punkte: accounts[name].punkte, type: accounts[name].type };
                                 accountSelectOverlay.classList.add('hidden');
                                 myPurchasesCodeOverlay.classList.remove('hidden');
+                                document.getElementById('my-purchases-code-input').focus();
                             });
                             accountList.appendChild(accountButton);
                         });
