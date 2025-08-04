@@ -163,18 +163,22 @@
             position: relative;
             text-align: center;
         }
+        
+        .overlay .close-button-container {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1001;
+        }
 
         .close-overlay {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            font-size: 1em; /* Kleinere Schriftgröße für das X */
+            width: 28px;
+            height: 28px;
+            font-size: 1em;
             background-color: #ffd814;
             border: 1px solid #fcd200;
             color: #555;
             cursor: pointer;
-            width: 25px;
-            height: 25px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
@@ -183,7 +187,7 @@
             line-height: 1;
             padding: 0;
         }
-        
+
         .overlay-content h2 {
             margin-top: 0;
         }
@@ -348,8 +352,10 @@
 
 
     <div id="product-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <img id="product-overlay-image" class="product-overlay-image" src="" alt="Produktbild">
             <h2 id="product-name"></h2>
             <div id="product-rating-display"></div>
@@ -364,16 +370,20 @@
     </div>
     
     <div id="reviews-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2 id="reviews-product-name"></h2>
             <ul id="reviews-list"></ul>
         </div>
     </div>
     
     <div id="review-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2 id="review-product-name"></h2>
             <h4>Schreibe eine Bewertung</h4>
             <div class="stars" id="new-review-stars">
@@ -389,8 +399,10 @@
     </div>
 
     <div id="account-select-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2 id="account-select-title">Benutzerkonto auswählen:</h2>
             <div id="account-list-container">
                 <div id="account-list"></div>
@@ -399,8 +411,10 @@
     </div>
     
     <div id="code-entry-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2>Sicherheitscode eingeben</h2>
             <input type="password" id="security-code-input" placeholder="Sicherheitscode">
             <button id="confirm-buy-button">Kaufen</button>
@@ -409,8 +423,10 @@
     </div>
     
     <div id="my-purchases-code-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2>Sicherheitscode eingeben</h2>
             <input type="password" id="my-purchases-code-input" placeholder="Sicherheitscode">
             <button id="my-purchases-confirm-button">Anzeigen</button>
@@ -419,8 +435,10 @@
     </div>
 
     <div id="my-purchases-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2>Meine Käufe</h2>
             <div id="my-purchases-list-container">
                 <ul id="my-purchases-list"></ul>
@@ -429,8 +447,10 @@
     </div>
     
     <div id="return-request-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2>Rücksendung anfragen</h2>
             <p>Geben Sie den Grund für die Rücksendung an:</p>
             <textarea id="return-reason-input" placeholder="Grund für die Rücksendung..."></textarea>
@@ -440,8 +460,10 @@
 
 
     <div id="success-overlay" class="overlay hidden">
-        <div class="overlay-content">
+        <div class="close-button-container">
             <button class="close-overlay">×</button>
+        </div>
+        <div class="overlay-content">
             <h2>Kauf erfolgreich!</h2>
             <p id="success-message"></p>
         </div>
