@@ -183,15 +183,6 @@
             cursor: pointer;
         }
 
-        .admin-login {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 0.8em;
-            color: #ccc;
-            cursor: pointer;
-        }
-
         #security-code-input, #review-comment-input, #my-purchases-code-input, #return-reason-input {
             width: 100%;
             padding: 10px;
@@ -272,12 +263,27 @@
             display: flex;
             flex-direction: column;
         }
+        
+        #my-purchases-list-container {
+            max-height: 300px;
+            overflow-y: auto;
+        }
 
         #my-purchases-list button {
             width: auto;
             margin-top: 5px;
             padding: 5px 10px;
             font-size: 0.9em;
+        }
+
+        .close-overlay {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 1.5em;
+            background: none;
+            border: none;
+            cursor: pointer;
         }
 
     </style>
@@ -397,18 +403,6 @@
             <p id="success-message"></p>
         </div>
     </div>
-    
-    <div id="admin-code-overlay" class="overlay hidden">
-        <div class="overlay-content">
-            <button class="close-overlay">×</button>
-            <h2>Admin-Code eingeben</h2>
-            <input type="password" id="admin-code-input" placeholder="Admin-Code">
-            <button id="admin-login-confirm-button">Login</button>
-        </div>
-    </div>
-    
-    <span class="admin-login">Admin-Login</span>
-
 
     <script>
         // Firebase-Konfiguration
@@ -437,7 +431,6 @@
         const myPurchasesOverlay = document.getElementById('my-purchases-overlay');
         const returnRequestOverlay = document.getElementById('return-request-overlay');
         const successOverlay = document.getElementById('success-overlay');
-        const adminCodeOverlay = document.getElementById('admin-code-overlay');
 
         const productNameElement = document.getElementById('product-name');
         const productRatingDisplay = document.getElementById('product-rating-display');
@@ -474,11 +467,6 @@
         
         const successMessage = document.getElementById('success-message');
         
-        const adminLoginButton = document.querySelector('.admin-login');
-        const adminCodeInput = document.getElementById('admin-code-input');
-        const adminLoginConfirmButton = document.getElementById('admin-login-confirm-button');
-        
-
         let selectedProduct = null;
         let selectedUser = null;
         let selectedRating = 0;
@@ -488,8 +476,8 @@
         const hideAllOverlays = () => {
             document.querySelectorAll('.overlay').forEach(overlay => overlay.classList.add('hidden'));
             securityCodeInput.value = '';
-            errorMessage.textContent = '';
             myPurchasesCodeInput.value = '';
+            errorMessage.textContent = '';
             myPurchasesErrorMessage.textContent = '';
             returnReasonInput.value = '';
             selectedRating = 0;
@@ -500,26 +488,17 @@
         document.querySelectorAll('.close-overlay').forEach(button => {
             button.addEventListener('click', hideAllOverlays);
         });
-        
-        adminLoginButton.addEventListener('click', () => {
-            adminCodeOverlay.classList.remove('hidden');
-        });
-
-        adminLoginConfirmButton.addEventListener('click', () => {
-            const enteredAdminCode = adminCodeInput.value;
-            const adminCode = '121071';
-            if (enteredAdminCode === adminCode) {
-                window.location.href = 'admin.html';
-            } else {
-                alert('Falscher Admin-Code.');
-                adminCodeInput.value = '';
-            }
-        });
-
 
         const renderStars = (rating) => {
             const fullStars = Math.floor(rating);
-            let starsHtml = '⭐'.repeat(fullStars);
+            let starsHtml = '';
+            for(let i = 0; i < 5; i++) {
+                if (i < fullStars) {
+                    starsHtml += '⭐';
+                } else {
+                    starsHtml += '☆';
+                }
+            }
             return starsHtml;
         };
 
@@ -544,7 +523,10 @@
                     });
                     
                     productContainer.innerHTML = '';
-                    const productList = Object.keys(products).map(key => ({ id: key, ...products[key] }));
+                    let productList = Object.keys(products).map(key => ({ id: key, ...products[key] }));
+
+                    // Sortiere Produkte nach Preis
+                    productList.sort((a, b) => a.preis - b.preis);
 
                     productList.forEach(product => {
                         const productItem = document.createElement('div');
@@ -649,7 +631,7 @@
                     if (review.productId === productId) {
                         const li = document.createElement('li');
                         li.innerHTML = `
-                            <strong>${'⭐'.repeat(review.rating)}</strong><br>
+                            <strong>${renderStars(review.rating)}</strong><br>
                             <em>"${review.comment}"</em><br>
                             <small>von ${review.userName} am ${new Date(review.date).toLocaleDateString()}</small>
                         `;
@@ -669,6 +651,8 @@
 
         // Meine Käufe Logik
         myPurchasesButton.addEventListener('click', () => {
+            myPurchasesCodeInput.value = '';
+            myPurchasesErrorMessage.textContent = '';
             accountSelectTitle.textContent = 'Benutzerkonto auswählen:';
             loadUserAccountsForPurchases();
         });
@@ -696,50 +680,70 @@
             myPurchasesList.innerHTML = '';
             const ordersRef = dbPunkte.ref('bestellungen');
             const reviewsRef = dbPunkte.ref('bewertungen');
+            const productsRef = dbPunkte.ref('shopartikel');
 
-            Promise.all([ordersRef.once('value'), reviewsRef.once('value')])
-                .then(([ordersSnapshot, reviewsSnapshot]) => {
+            Promise.all([ordersRef.once('value'), reviewsRef.once('value'), productsRef.once('value')])
+                .then(([ordersSnapshot, reviewsSnapshot, productsSnapshot]) => {
                     const allOrders = ordersSnapshot.val() || {};
                     const allReviews = reviewsSnapshot.val() || {};
+                    const allProducts = productsSnapshot.val() || {};
 
                     const userPurchases = Object.keys(allOrders)
                         .filter(key => allOrders[key].name === userName)
                         .map(key => ({ id: key, ...allOrders[key] }));
 
-                    const userReviews = Object.values(allReviews).filter(review => review.userName === userName).map(review => review.productName);
+                    const userReviews = Object.values(allReviews).filter(review => review.userName === userName);
 
                     if (userPurchases.length > 0) {
                         userPurchases.forEach(purchase => {
                             const li = document.createElement('li');
-                            const hasRated = userReviews.includes(purchase.artikel);
+                            
+                            const hasRated = userReviews.some(review => review.productName === purchase.artikel);
+                            const reviewForPurchase = userReviews.find(review => review.productName === purchase.artikel);
                             
                             const returnStatus = purchase.returnStatus || 'keine Anfrage';
+                            const orderStatus = purchase.status || 'unbekannt';
                             let returnStatusText = '';
+                            let orderStatusText = `<span>Status: ${orderStatus}</span>`;
                             let showReturnButton = true;
-
-                            switch(returnStatus) {
-                                case 'in Bearbeitung':
-                                    returnStatusText = `<span style="color:orange;">Rücksendung: in Bearbeitung</span>`;
-                                    showReturnButton = false;
-                                    break;
-                                case 'angenommen':
-                                    returnStatusText = `<span style="color:green;">Rücksendung: angenommen</span>`;
-                                    showReturnButton = false;
-                                    break;
-                                case 'abgelehnt':
-                                    returnStatusText = `<span style="color:red;">Rücksendung: abgelehnt</span>`;
-                                    showReturnButton = false;
-                                    break;
+                            
+                            if (returnStatus !== 'keine Anfrage') {
+                                switch(returnStatus) {
+                                    case 'in Bearbeitung':
+                                        returnStatusText = `<span style="color:orange;">Rücksendung: in Bearbeitung</span>`;
+                                        showReturnButton = false;
+                                        break;
+                                    case 'angenommen':
+                                        returnStatusText = `<span style="color:green;">Rücksendung: angenommen</span>`;
+                                        showReturnButton = false;
+                                        break;
+                                    case 'abgelehnt':
+                                        returnStatusText = `<span style="color:red;">Rücksendung: abgelehnt</span>`;
+                                        showReturnButton = false;
+                                        break;
+                                }
                             }
                             
+                            if (orderStatus === 'Kauf abgelehnt') {
+                                showReturnButton = false;
+                            }
+
                             li.innerHTML = `
                                 <span><strong>Produkt:</strong> ${purchase.artikel}</span>
                                 <span><strong>Kaufdatum:</strong> ${new Date(purchase.kaufdatum).toLocaleDateString()}</span>
                                 <span><strong>Gezahlter Preis:</strong> ${purchase.gezahlterPreis} Mausdollar</span>
+                                ${orderStatusText}
                                 ${returnStatusText}
                             `;
                             
-                            if (hasRated) {
+                            if (orderStatus === 'Produkt geliefert' && !hasRated) {
+                                const rateButton = document.createElement('button');
+                                rateButton.textContent = 'Bewerten';
+                                rateButton.addEventListener('click', () => {
+                                    showReviewOverlayForPurchase(purchase.artikel);
+                                });
+                                li.appendChild(rateButton);
+                            } else if (hasRated) {
                                 const deleteReviewButton = document.createElement('button');
                                 deleteReviewButton.textContent = 'Bewertung löschen';
                                 deleteReviewButton.style.backgroundColor = 'red';
@@ -748,16 +752,9 @@
                                     deleteReview(purchase.artikel, userName);
                                 });
                                 li.appendChild(deleteReviewButton);
-                            } else {
-                                const rateButton = document.createElement('button');
-                                rateButton.textContent = 'Bewerten';
-                                rateButton.addEventListener('click', () => {
-                                    showReviewOverlayForPurchase(purchase.artikel);
-                                });
-                                li.appendChild(rateButton);
                             }
                             
-                            if (showReturnButton) {
+                            if (showReturnButton && orderStatus === 'Produkt geliefert') {
                                 const returnButton = document.createElement('button');
                                 returnButton.textContent = 'Rücksendung anfragen';
                                 returnButton.addEventListener('click', () => {
@@ -786,7 +783,8 @@
                             .then(() => {
                                 alert('Bewertung erfolgreich gelöscht!');
                                 hideAllOverlays();
-                                loadProducts(); // Produkte neu laden, um Stern-Bewertung zu aktualisieren
+                                loadProducts();
+                                loadPurchases(userName);
                             })
                             .catch(error => {
                                 console.error("Fehler beim Löschen der Bewertung:", error);
@@ -832,7 +830,6 @@
                 reason: reason,
                 date: new Date().toISOString()
             }).then(() => {
-                // Update order status
                 dbPunkte.ref(`bestellungen/${selectedOrder.id}/returnStatus`).set('in Bearbeitung');
                 alert('Rückgabeanfrage wurde gesendet.');
                 hideAllOverlays();
@@ -843,7 +840,6 @@
             });
         });
 
-        // Bewertung senden
         submitReviewButton.addEventListener('click', () => {
             const comment = reviewCommentInput.value.trim();
             const productId = selectedProduct.id;
@@ -868,7 +864,8 @@
             }).then(() => {
                 alert('Bewertung erfolgreich abgegeben!');
                 hideAllOverlays();
-                loadProducts(); // Produkte neu laden, um die neue Bewertung anzuzeigen
+                loadProducts();
+                loadPurchases(selectedUser.name);
             }).catch(error => {
                 console.error("Fehler beim Speichern der Bewertung:", error);
                 alert('Fehler beim Speichern der Bewertung.');
@@ -1002,7 +999,9 @@
                                     artikel: selectedProduct.name,
                                     lieferzeit: selectedProduct.lieferzeit,
                                     kaufdatum: new Date().toISOString(),
-                                    gezahlterPreis: selectedProduct.preis
+                                    gezahlterPreis: selectedProduct.preis,
+                                    status: 'wird geliefert',
+                                    userType: selectedUser.type
                                 }).then(() => {
                                     codeEntryOverlay.classList.add('hidden');
                                     successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;
