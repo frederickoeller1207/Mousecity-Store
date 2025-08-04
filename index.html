@@ -288,7 +288,8 @@
 
     <header>
         <h1 id="store-title">Willkommen im Mousecity Store</h1>
-        <button id="admin-login-button" style="display: none;">a</button> </header>
+        <button id="admin-login-button" style="display: none;">a</button>
+    </header>
 
 
     <main>
@@ -481,8 +482,9 @@
                         <p>${product.preis} Mausdollar</p>
                         <small>Verfügbar: ${product.stock || 0}</small>
                     `;
-
+                    
                     productItem.addEventListener('click', () => {
+                        // Klick-Funktion für jedes Produkt-Element
                         if (product.stock > 0) {
                             selectedProduct = product;
                             showProductOverlay(selectedProduct);
@@ -496,8 +498,14 @@
         const loadProducts = () => {
             const productsRef = dbPunkte.ref('shopartikel');
             productsRef.on('value', (snapshot) => {
-                allProducts = snapshot.val() ? Object.values(snapshot.val()).map(item => ({...item})) : {};
-                renderProducts(Object.values(allProducts));
+                const products = snapshot.val();
+                if (products) {
+                    // Füge die IDs zu den Produkten hinzu, um sie später zu referenzieren
+                    allProducts = Object.keys(products).map(key => ({ id: key, ...products[key] }));
+                    renderProducts(allProducts);
+                } else {
+                    categoryProductsContainer.innerHTML = '<p>Keine Produkte gefunden.</p>';
+                }
             });
         };
 
@@ -577,7 +585,6 @@
                 alert('Bitte gib einen Kommentar ein.');
                 return;
             }
-
             loadUserAccountsForReview(comment);
         });
 
@@ -730,7 +737,6 @@
         });
 
         document.addEventListener('DOMContentLoaded', loadProducts);
-
     </script>
 </body>
 </html>
