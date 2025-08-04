@@ -99,7 +99,7 @@
             margin-top: 15px;
         }
 
-        #review-list li {
+        #review-list li, #return-requests-list li {
             flex-direction: column;
             align-items: flex-start;
         }
@@ -125,6 +125,13 @@
             <ul id="orders-list"></ul>
         </section>
         
+        <hr>
+
+        <section class="admin-section">
+            <h2>Rückgabeanfragen</h2>
+            <ul id="return-requests-list"></ul>
+        </section>
+
         <hr>
 
         <section class="admin-section">
@@ -175,6 +182,7 @@
 
         // Admin-Logik
         const ordersList = document.getElementById('orders-list');
+        const returnRequestsList = document.getElementById('return-requests-list');
         const productsList = document.getElementById('products-list');
         const saveProductButton = document.getElementById('save-product-button');
         const productIdInput = document.getElementById('product-id');
@@ -203,7 +211,6 @@
                 if (categories) {
                     Object.keys(categories).forEach(key => {
                         const categoryName = categories[key];
-                        // Liste für die Verwaltung
                         const li = document.createElement('li');
                         li.innerHTML = `
                             <span>${categoryName}</span>
@@ -211,7 +218,6 @@
                         `;
                         categoryList.appendChild(li);
 
-                        // Dropdown für Produkte
                         const option = document.createElement('option');
                         option.value = key;
                         option.textContent = categoryName;
@@ -221,7 +227,6 @@
             });
         };
 
-        // Event-Listener zum Hinzufügen einer Kategorie
         addCategoryButton.addEventListener('click', () => {
             const categoryName = categoryNameInput.value.trim();
             if (categoryName) {
@@ -230,7 +235,6 @@
             }
         });
 
-        // Event-Listener zum Löschen einer Kategorie
         categoryList.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-btn')) {
                 const categoryId = e.target.dataset.id;
@@ -250,7 +254,7 @@
                         li.innerHTML = `
                             <span>
                                 <strong>${order.name}</strong> hat ${order.artikel} bestellt.
-                                <small>(${order.lieferzeit})</small>
+                                <small>(${order.lieferzeit}, am ${order.kaufdatum || 'unbekannt'})</small>
                             </span>
                             <button class="delete-btn" data-id="${key}">x</button>
                         `;
@@ -348,7 +352,6 @@
             }
         });
         
-        // Funktion zum Laden der Bewertungen
         const loadReviews = () => {
             const reviewsRef = dbPunkte.ref('bewertungen');
             reviewsRef.on('value', (snapshot) => {
@@ -373,11 +376,69 @@
             });
         };
 
-        // Event-Listener zum Löschen von Bewertungen
         reviewList.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-btn')) {
                 const reviewId = e.target.dataset.id;
                 dbPunkte.ref(`bewertungen/${reviewId}`).remove();
+            }
+        });
+
+        const loadReturnRequests = () => {
+            const requestsRef = dbPunkte.ref('ruecksendeanfragen');
+            requestsRef.on('value', (snapshot) => {
+                returnRequestsList.innerHTML = '';
+                const requests = snapshot.val();
+                if (requests) {
+                    Object.keys(requests).forEach(key => {
+                        const request = requests[key];
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>
+                                <strong>Anfrage von:</strong> ${request.userName} <br>
+                                <strong>Produkt:</strong> ${request.productName} <br>
+                                <strong>Grund:</strong> ${request.reason} <br>
+                                <small>Bestell-ID: ${request.orderId}</small>
+                            </span>
+                            <div>
+                                <button class="accept-btn" data-id="${key}" data-order-id="${request.orderId}" data-price="${request.purchasePrice}" data-user-name="${request.userName}" data-user-type="${request.userType}">Annehmen</button>
+                                <button class="delete-btn" data-id="${key}">Ablehnen</button>
+                            </div>
+                        `;
+                        returnRequestsList.appendChild(li);
+                    });
+                } else {
+                    returnRequestsList.innerHTML = '<li>Keine offenen Rückgabeanfragen.</li>';
+                }
+            });
+        };
+
+        returnRequestsList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-btn')) {
+                const requestId = e.target.dataset.id;
+                const orderId = e.target.dataset.orderId;
+                // Update order status to "abgelehnt"
+                dbPunkte.ref(`bestellungen/${orderId}/returnStatus`).set('abgelehnt');
+                dbPunkte.ref(`ruecksendeanfragen/${requestId}`).remove();
+            } else if (e.target.classList.contains('accept-btn')) {
+                const requestId = e.target.dataset.id;
+                const orderId = e.target.dataset.orderId;
+                const purchasePrice = parseFloat(e.target.dataset.price);
+                const userName = e.target.dataset.userName;
+                const userType = e.target.dataset.userType;
+
+                const userRef = dbPunkte.ref(`${userType}/${userName}`);
+                userRef.once('value', (snapshot) => {
+                    const user = snapshot.val();
+                    if (user) {
+                        const newPoints = (user.punkte || 0) + purchasePrice;
+                        userRef.child('punkte').set(newPoints);
+                        
+                        // Update order status to "angenommen"
+                        dbPunkte.ref(`bestellungen/${orderId}/returnStatus`).set('angenommen');
+                        dbPunkte.ref(`ruecksendeanfragen/${requestId}`).remove();
+                        alert(`Rücksendung angenommen. ${purchasePrice} Mausdollar wurden ${userName} gutgeschrieben.`);
+                    }
+                });
             }
         });
 
@@ -386,6 +447,7 @@
             loadCategories();
             loadProductsAdmin();
             loadReviews();
+            loadReturnRequests();
         });
     </script>
 </body>
