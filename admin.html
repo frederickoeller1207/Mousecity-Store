@@ -58,6 +58,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .admin-section li button {
@@ -87,7 +88,7 @@
             border-radius: 5px;
         }
 
-        #save-product-button {
+        #save-product-button, #add-category-button {
             background-color: #ffd814;
             border: 1px solid #fcd200;
             padding: 10px 20px;
@@ -98,7 +99,6 @@
             margin-top: 15px;
         }
 
-        /* Neue Styles für die neuen Funktionen */
         #review-list li {
             flex-direction: column;
             align-items: flex-start;
@@ -191,6 +191,7 @@
         const categoryList = document.getElementById('category-list');
 
         const reviewList = document.getElementById('review-list');
+        let categories = {}; // Variable zum Speichern der Kategorien
 
         // Funktion zum Laden der Kategorien
         const loadCategories = () => {
@@ -198,7 +199,7 @@
             categoriesRef.on('value', (snapshot) => {
                 categoryList.innerHTML = '';
                 productCategorySelect.innerHTML = '<option value="">-- Kategorie auswählen --</option>';
-                const categories = snapshot.val();
+                categories = snapshot.val() || {}; // IDs als Schlüssel speichern
                 if (categories) {
                     Object.keys(categories).forEach(key => {
                         const categoryName = categories[key];
@@ -275,9 +276,11 @@
                     Object.keys(products).forEach(key => {
                         const product = products[key];
                         const li = document.createElement('li');
+                        const categoryName = categories[product.kategorie] || 'Ohne Kategorie';
                         li.innerHTML = `
                             <span>
-                                <strong>${product.name}</strong> - ${product.preis} Mausdollar (Bestand: ${product.stock || 0})
+                                <strong>${product.name}</strong> - ${product.preis} Mausdollar (Bestand: ${product.stock || 0}) <br>
+                                <small>Kategorie: ${categoryName}</small>
                             </span>
                             <div>
                                 <button class="edit-btn" data-id="${key}" data-name="${product.name}" data-price="${product.preis}" data-stock="${product.stock || 0}" data-delivery="${product.lieferzeit}" data-description="${product.beschreibung || ''}" data-image="${product.image || ''}" data-category="${product.kategorie || ''}">✏️</button>
