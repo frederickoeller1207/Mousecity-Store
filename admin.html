@@ -108,6 +108,9 @@
             margin-top: 5px;
             margin-bottom: 10px;
         }
+        .order-actions button {
+            margin: 5px 5px 0 0;
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -121,8 +124,15 @@
 
     <main>
         <section class="admin-section">
-            <h2>Bestellungen</h2>
-            <ul id="orders-list"></ul>
+            <h2>Bestellungen in Bearbeitung</h2>
+            <ul id="pending-orders-list"></ul>
+        </section>
+
+        <hr>
+
+        <section class="admin-section">
+            <h2>Bestellungen (Geliefert oder Abgelehnt)</h2>
+            <ul id="processed-orders-list"></ul>
         </section>
         
         <hr>
@@ -181,7 +191,8 @@
         const dbPunkte = appPunkte.database();
 
         // Admin-Logik
-        const ordersList = document.getElementById('orders-list');
+        const pendingOrdersList = document.getElementById('pending-orders-list');
+        const processedOrdersList = document.getElementById('processed-orders-list');
         const returnRequestsList = document.getElementById('return-requests-list');
         const productsList = document.getElementById('products-list');
         const saveProductButton = document.getElementById('save-product-button');
@@ -199,15 +210,14 @@
         const categoryList = document.getElementById('category-list');
 
         const reviewList = document.getElementById('review-list');
-        let categories = {}; // Variable zum Speichern der Kategorien
+        let categories = {};
 
-        // Funktion zum Laden der Kategorien
         const loadCategories = () => {
             const categoriesRef = dbPunkte.ref('kategorien');
             categoriesRef.on('value', (snapshot) => {
                 categoryList.innerHTML = '';
                 productCategorySelect.innerHTML = '<option value="">-- Kategorie auswählen --</option>';
-                categories = snapshot.val() || {}; // IDs als Schlüssel speichern
+                categories = snapshot.val() || {};
                 if (categories) {
                     Object.keys(categories).forEach(key => {
                         const categoryName = categories[key];
@@ -245,7 +255,8 @@
         const loadOrders = () => {
             const ordersRef = dbPunkte.ref('bestellungen');
             ordersRef.on('value', (snapshot) => {
-                ordersList.innerHTML = '';
+                pendingOrdersList.innerHTML = '';
+                processedOrdersList.innerHTML = '';
                 const orders = snapshot.val();
                 if (orders) {
                     Object.keys(orders).forEach(key => {
@@ -253,23 +264,62 @@
                         const li = document.createElement('li');
                         li.innerHTML = `
                             <span>
-                                <strong>${order.name}</strong> hat ${order.artikel} bestellt.
-                                <small>(${order.lieferzeit}, am ${order.kaufdatum || 'unbekannt'})</small>
+                                <strong>${order.name}</strong> hat ${order.artikel} bestellt.<br>
+                                <small>Kaufpreis: ${order.gezahlterPreis} Mausdollar, Datum: ${new Date(order.kaufdatum).toLocaleDateString()}</small><br>
+                                <small>Status: ${order.status}</small>
                             </span>
-                            <button class="delete-btn" data-id="${key}">x</button>
+                            <div class="order-actions"></div>
                         `;
-                        ordersList.appendChild(li);
+
+                        if (order.status === 'wird geliefert') {
+                             const confirmButton = document.createElement('button');
+                             confirmButton.textContent = 'Lieferung bestätigen';
+                             confirmButton.className = 'confirm-delivery-btn';
+                             confirmButton.dataset.orderId = key;
+                             li.querySelector('.order-actions').appendChild(confirmButton);
+                             
+                             const rejectButton = document.createElement('button');
+                             rejectButton.textContent = 'Kauf ablehnen';
+                             rejectButton.className = 'reject-purchase-btn';
+                             rejectButton.dataset.orderId = key;
+                             rejectButton.dataset.price = order.gezahlterPreis;
+                             rejectButton.dataset.userName = order.name;
+                             rejectButton.dataset.userType = order.userType;
+                             li.querySelector('.order-actions').appendChild(rejectButton);
+
+                             pendingOrdersList.appendChild(li);
+                        } else {
+                            processedOrdersList.appendChild(li);
+                        }
                     });
                 }
             });
         };
+        
+        pendingOrdersList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('confirm-delivery-btn')) {
+                const orderId = e.target.dataset.orderId;
+                dbPunkte.ref(`bestellungen/${orderId}/status`).set('Produkt geliefert');
+            } else if (e.target.classList.contains('reject-purchase-btn')) {
+                const orderId = e.target.dataset.orderId;
+                const price = parseFloat(e.target.dataset.price);
+                const userName = e.target.dataset.userName;
+                const userType = e.target.dataset.userType;
+                
+                // Refund the points
+                dbPunkte.ref(`${userType}/${userName}`).once('value', snapshot => {
+                    const user = snapshot.val();
+                    if (user) {
+                        const newPoints = (user.punkte || 0) + price;
+                        dbPunkte.ref(`${userType}/${userName}/punkte`).set(newPoints);
+                    }
+                });
 
-        ordersList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('delete-btn')) {
-                const orderId = e.target.dataset.id;
-                dbPunkte.ref(`bestellungen/${orderId}`).remove();
+                dbPunkte.ref(`bestellungen/${orderId}/status`).set('Kauf abgelehnt');
+                alert(`Kauf von ${userName} abgelehnt. ${price} Mausdollar wurden erstattet.`);
             }
         });
+
 
         const loadProductsAdmin = () => {
             const productsRef = dbPunkte.ref('shopartikel');
@@ -401,7 +451,7 @@
                             </span>
                             <div>
                                 <button class="accept-btn" data-id="${key}" data-order-id="${request.orderId}" data-price="${request.purchasePrice}" data-user-name="${request.userName}" data-user-type="${request.userType}">Annehmen</button>
-                                <button class="delete-btn" data-id="${key}">Ablehnen</button>
+                                <button class="delete-btn" data-id="${key}" data-order-id="${request.orderId}">Ablehnen</button>
                             </div>
                         `;
                         returnRequestsList.appendChild(li);
@@ -416,7 +466,6 @@
             if (e.target.classList.contains('delete-btn')) {
                 const requestId = e.target.dataset.id;
                 const orderId = e.target.dataset.orderId;
-                // Update order status to "abgelehnt"
                 dbPunkte.ref(`bestellungen/${orderId}/returnStatus`).set('abgelehnt');
                 dbPunkte.ref(`ruecksendeanfragen/${requestId}`).remove();
             } else if (e.target.classList.contains('accept-btn')) {
@@ -433,7 +482,6 @@
                         const newPoints = (user.punkte || 0) + purchasePrice;
                         userRef.child('punkte').set(newPoints);
                         
-                        // Update order status to "angenommen"
                         dbPunkte.ref(`bestellungen/${orderId}/returnStatus`).set('angenommen');
                         dbPunkte.ref(`ruecksendeanfragen/${requestId}`).remove();
                         alert(`Rücksendung angenommen. ${purchasePrice} Mausdollar wurden ${userName} gutgeschrieben.`);
