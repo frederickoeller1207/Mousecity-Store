@@ -310,12 +310,7 @@
         });
 
         // Admin-Login über den Titel
-        storeTitle.addEventListener('click', (e) => {
-            // Nur der Klick auf "im" öffnet das Overlay
-            if (e.target.innerText.includes('im')) {
-                adminCodeOverlay.classList.remove('hidden');
-            }
-        });
+        
         
         // Der ursprüngliche Admin-Login-Button wurde nur ausgeblendet
         // Da er aber komplett entfernt werden soll, hier nur das, was für den neuen Login nötig ist
