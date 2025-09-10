@@ -1,4 +1,5 @@
-<html lang="de">  
+<!DOCTYPE html>
+<html lang="de">
 <head>  
     <meta charset="UTF-8">  
     <meta name="viewport" content="width=device-width, initial-scale=1.0">  
@@ -9,347 +10,304 @@
             margin: 0;  
             padding: 0;  
             background-color: #f3f3f3;  
-        }  header {  
-        display: flex;  
-        justify-content: space-between;  
-        align-items: center;  
-        background-color: #232f3e;  
-        color: white;  
-        padding: 10px 20px;  
-    }  
-
-    header h1 {  
-        margin: 0;  
-        font-size: 1.2em;  
-    }  
-      
-    #my-purchases-button {  
-        background-color: #4a5d73;  
-        border: none;  
-        color: white;  
-        padding: 10px 20px;  
-        font-size: 1em;  
-        cursor: pointer;  
-        border-radius: 5px;  
-    }  
-      
-    #category-buttons {  
-        display: flex;  
-        justify-content: flex-start;  
-        flex-wrap: wrap;  
-        background-color: #f3f3f3;  
-        padding: 10px 20px;  
-        border-bottom: 1px solid #ddd;  
-        gap: 10px;  
-    }  
-
-    #category-buttons button {  
-        background-color: #e0e0e0;  
-        border: 1px solid #ccc;  
-        padding: 8px 12px;  
-        border-radius: 5px;  
-        cursor: pointer;  
-        font-size: 0.9em;  
-        white-space: nowrap;  
-    }  
-
-    #category-buttons button.active {  
-        background-color: #ffd814;  
-        border-color: #fcd200;  
-        font-weight: bold;  
-    }  
-
-    main {  
-        padding: 20px;  
-    }  
-
-    #product-container {  
-        display: grid;  
-        grid-template-columns: 1fr 1fr;  
-        gap: 15px;  
-        text-align: center;  
-    }  
-      
-    .product-item {  
-        background-color: white;  
-        border: 1px solid #ddd;  
-        border-radius: 8px;  
-        padding: 10px;  
-        cursor: pointer;  
-        transition: box-shadow 0.2s;  
-        display: flex;  
-        flex-direction: column;  
-        justify-content: space-between;  
-        align-items: center;  
-        text-align: left;  
-    }  
-
-    .product-item:hover {  
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  
-    }  
-
-    .product-item img {  
-        max-width: 100%;  
-        height: auto;  
-        border-radius: 5px;  
-        margin-bottom: 10px;  
-    }  
-
-    .product-item h3 {  
-        margin: 0 0 5px 0;  
-        font-size: 1em;  
-    }  
-
-    .product-item .rating {  
-        display: flex;  
-        align-items: center;  
-        margin-bottom: 5px;  
-        font-size: 0.9em;  
-        color: #555;  
-    }  
-    .product-item .rating .stars {  
-        color: #ffc107;  
-    }  
-
-    .product-item .delivery-info {  
-        font-size: 0.8em;  
-        color: #007185;  
-        margin-bottom: 10px;  
-    }  
-
-    .product-item .price {  
-        margin: 0 0 10px 0;  
-        color: #b12704;  
-        font-weight: bold;  
-        font-size: 1.1em;  
-    }  
-
-    .product-item .order-button {  
-        background-color: #ffd814;  
-        border: 1px solid #fcd200;  
-        padding: 8px 16px;  
-        border-radius: 20px;  
-        cursor: pointer;  
-        font-size: 0.9em;  
-        width: 100%;  
-    }  
-
-    .overlay {  
-        position: fixed;  
-        top: 0;  
-        left: 0;  
-        width: 100%;  
-        height: 100%;  
-        background-color: rgba(0, 0, 0, 0.7);  
-        display: flex;  
-        justify-content: center;  
-        align-items: center;  
-        z-index: 1000;  
-    }  
-
-    .overlay.hidden {  
-        display: none;  
-    }  
-
-    .overlay-content {  
-        background-color: white;  
-        padding: 20px;  
-        border-radius: 8px;  
-        width: 90%;  
-        max-width: 400px;  
-        position: relative;  
-        text-align: center;  
-    }  
-      
-    .overlay .close-button-container {  
-        position: absolute;  
-        top: 10px;  
-        right: 10px;  
-        z-index: 1001;  
-    }  
-
-    .close-overlay {  
-        width: 28px;  
-        height: 28px;  
-        font-size: 1em;  
-        background-color: #ffd814;  
-        border: 1px solid #fcd200;  
-        color: #555;  
-        cursor: pointer;  
-        border-radius: 50%;  
-        display: flex;  
-        justify-content: center;  
-        align-items: center;  
-        font-weight: bold;  
-        line-height: 1;  
-        padding: 0;  
-    }  
-
-    .overlay-content h2 {  
-        margin-top: 0;  
-    }  
-
-    .overlay-content button {  
-        background-color: #ffd814;  
-        border: 1px solid #fcd200;  
-        padding: 10px 20px;  
-        border-radius: 20px;  
-        cursor: pointer;  
-        font-size: 1em;  
-        width: 100%;  
-        margin-top: 15px;  
-    }  
-
-    #account-list-container {  
-        max-height: 200px;  
-        overflow-y: auto;  
-        border: 1px solid #ddd;  
-        border-radius: 5px;  
-        padding: 10px;  
-    }  
-
-    #account-list button {  
-        display: block;  
-        width: 100%;  
-        padding: 10px;  
-        margin-bottom: 10px;  
-        background-color: #f7f7f7;  
-        border: 1px solid #ddd;  
-        border-radius: 5px;  
-        text-align: left;  
-        cursor: pointer;  
-    }  
-
-    #security-code-input, #review-comment-input, #my-purchases-code-input, #return-reason-input {  
-        width: 100%;  
-        padding: 10px;  
-        box-sizing: border-box;  
-        margin-top: 10px;  
-        border: 1px solid #ccc;  
-        border-radius: 5px;  
-    }  
-
-    .error-message {  
-        color: red;  
-        margin-top: 10px;  
-        font-size: 0.9em;  
-    }  
-
-    .out-of-stock {  
-        opacity: 0.6;  
-        pointer-events: none;  
-        position: relative;  
-    }  
-
-    .out-of-stock::after {  
-        content: "Momentan nicht verfügbar";  
-        position: absolute;  
-        top: 50%;  
-        left: 50%;  
-        transform: translate(-50%, -50%);  
-        color: red;  
-        font-weight: bold;  
-        font-size: 1.2em;  
-        background-color: rgba(255, 255, 255, 0.8);  
-        padding: 5px 10px;  
-        border-radius: 5px;  
-        white-space: nowrap;  
-    }  
-
-    .out-of-stock h3 {  
-        text-decoration: line-through;  
-    }  
-      
-    .stars {  
-        display: flex;  
-        justify-content: center;  
-        margin-top: 10px;  
-    }  
-    .star {  
-        font-size: 1.5em;  
-        color: #ddd;  
-        cursor: pointer;  
-    }  
-    .star.filled {  
-        color: #ffc107;  
-    }  
-
-    .product-overlay-image {  
-        max-width: 100%;  
-        height: auto;  
-        margin-bottom: 15px;  
-        border-radius: 8px;  
-    }  
-      
-    #read-reviews-button {  
-        margin-top: 5px;  
-        padding: 5px 10px;  
-        font-size: 0.9em;  
-        background-color: #f0f0f0;  
-        border: 1px solid #ccc;  
-        color: #555;  
-    }  
-
-    #my-purchases-list li, #reviews-list li {  
-        text-align: left;  
-        background-color: #f9f9f9;  
-        border: 1px solid #eee;  
-        padding: 10px;  
-        margin-bottom: 10px;  
-        border-radius: 5px;  
-        display: flex;  
-        flex-direction: column;  
-    }  
-      
-    #my-purchases-list-container {  
-        max-height: 300px;  
-        overflow-y: auto;  
-    }  
-
-    #my-purchases-list button {  
-        width: auto;  
-        margin-top: 5px;  
-        padding: 5px 10px;  
-        font-size: 0.9em;  
-    }  
-      
-    .status-badge {  
-        display: inline-block;  
-        padding: 2px 8px;  
-        border-radius: 12px;  
-        color: white;  
-        font-size: 0.8em;  
-        margin-top: 5px;  
-    }  
-    .status-badge.in-progress { background-color: #2c3e50; }  
-    .status-badge.delivered { background-color: #27ae60; }  
-    .status-badge.rejected { background-color: #c0392b; }  
-    .status-badge.return-pending { background-color: #f39c12; }  
-    .status-badge.return-accepted { background-color: #16a085; }  
-    .status-badge.return-rejected { background-color: #e74c3c; }  
-
-</style>  
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
+        }  
+        header {  
+            display: flex;  
+            justify-content: space-between;  
+            align-items: center;  
+            background-color: #232f3e;  
+            color: white;  
+            padding: 10px 20px;  
+        }  
+        header h1 {  
+            margin: 0;  
+            font-size: 1.2em;  
+        }  
+        #my-purchases-button {  
+            background-color: #4a5d73;  
+            border: none;  
+            color: white;  
+            padding: 10px 20px;  
+            font-size: 1em;  
+            cursor: pointer;  
+            border-radius: 5px;  
+        }  
+        #category-buttons {  
+            display: flex;  
+            justify-content: flex-start;  
+            flex-wrap: wrap;  
+            background-color: #f3f3f3;  
+            padding: 10px 20px;  
+            border-bottom: 1px solid #ddd;  
+            gap: 10px;  
+        }  
+        #category-buttons button {  
+            background-color: #e0e0e0;  
+            border: 1px solid #ccc;  
+            padding: 8px 12px;  
+            border-radius: 5px;  
+            cursor: pointer;  
+            font-size: 0.9em;  
+            white-space: nowrap;  
+        }  
+        #category-buttons button.active {  
+            background-color: #ffd814;  
+            border-color: #fcd200;  
+            font-weight: bold;  
+        }  
+        main {  
+            padding: 20px;  
+        }  
+        #product-container {  
+            display: grid;  
+            grid-template-columns: 1fr 1fr;  
+            gap: 15px;  
+            text-align: center;  
+        }  
+        .product-item {  
+            background-color: white;  
+            border: 1px solid #ddd;  
+            border-radius: 8px;  
+            padding: 10px;  
+            cursor: pointer;  
+            transition: box-shadow 0.2s;  
+            display: flex;  
+            flex-direction: column;  
+            justify-content: space-between;  
+            align-items: center;  
+            text-align: left;  
+        }  
+        .product-item:hover {  
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  
+        }  
+        .product-item img {  
+            max-width: 100%;  
+            height: auto;  
+            border-radius: 5px;  
+            margin-bottom: 10px;  
+        }  
+        .product-item h3 {  
+            margin: 0 0 5px 0;  
+            font-size: 1em;  
+        }  
+        .product-item .rating {  
+            display: flex;  
+            align-items: center;  
+            margin-bottom: 5px;  
+            font-size: 0.9em;  
+            color: #555;  
+        }  
+        .product-item .rating .stars {  
+            color: #ffc107;  
+        }  
+        .product-item .delivery-info {  
+            font-size: 0.8em;  
+            color: #007185;  
+            margin-bottom: 10px;  
+        }  
+        .product-item .price {  
+            margin: 0 0 10px 0;  
+            color: #b12704;  
+            font-weight: bold;  
+            font-size: 1.1em;  
+        }  
+        .product-item .order-button {  
+            background-color: #ffd814;  
+            border: 1px solid #fcd200;  
+            padding: 8px 16px;  
+            border-radius: 20px;  
+            cursor: pointer;  
+            font-size: 0.9em;  
+            width: 100%;  
+        }  
+        .overlay {  
+            position: fixed;  
+            top: 0;  
+            left: 0;  
+            width: 100%;  
+            height: 100%;  
+            background-color: rgba(0, 0, 0, 0.7);  
+            display: flex;  
+            justify-content: center;  
+            align-items: center;  
+            z-index: 1000;  
+        }  
+        .overlay.hidden {  
+            display: none;  
+        }  
+        .overlay-content {  
+            background-color: white;  
+            padding: 20px;  
+            border-radius: 8px;  
+            width: 90%;  
+            max-width: 400px;  
+            position: relative;  
+            text-align: center;  
+        }  
+        .overlay .close-button-container {  
+            position: absolute;  
+            top: 10px;  
+            right: 10px;  
+            z-index: 1001;  
+        }  
+        .close-overlay {  
+            width: 28px;  
+            height: 28px;  
+            font-size: 1em;  
+            background-color: #ffd814;  
+            border: 1px solid #fcd200;  
+            color: #555;  
+            cursor: pointer;  
+            border-radius: 50%;  
+            display: flex;  
+            justify-content: center;  
+            align-items: center;  
+            font-weight: bold;  
+            line-height: 1;  
+            padding: 0;  
+        }  
+        .overlay-content h2 {  
+            margin-top: 0;  
+        }  
+        .overlay-content button {  
+            background-color: #ffd814;  
+            border: 1px solid #fcd200;  
+            padding: 10px 20px;  
+            border-radius: 20px;  
+            cursor: pointer;  
+            font-size: 1em;  
+            width: 100%;  
+            margin-top: 15px;  
+        }  
+        #account-list-container {  
+            max-height: 200px;  
+            overflow-y: auto;  
+            border: 1px solid #ddd;  
+            border-radius: 5px;  
+            padding: 10px;  
+        }  
+        #account-list button {  
+            display: block;  
+            width: 100%;  
+            padding: 10px;  
+            margin-bottom: 10px;  
+            background-color: #f7f7f7;  
+            border: 1px solid #ddd;  
+            border-radius: 5px;  
+            text-align: left;  
+            cursor: pointer;  
+        }  
+        #security-code-input, #review-comment-input, #my-purchases-code-input, #return-reason-input {  
+            width: 100%;  
+            padding: 10px;  
+            box-sizing: border-box;  
+            margin-top: 10px;  
+            border: 1px solid #ccc;  
+            border-radius: 5px;  
+        }  
+        .error-message {  
+            color: red;  
+            margin-top: 10px;  
+            font-size: 0.9em;  
+        }  
+        .out-of-stock {  
+            opacity: 0.6;  
+            pointer-events: none;  
+            position: relative;  
+        }  
+        .out-of-stock::after {  
+            content: "Momentan nicht verfügbar";  
+            position: absolute;  
+            top: 50%;  
+            left: 50%;  
+            transform: translate(-50%, -50%);  
+            color: red;  
+            font-weight: bold;  
+            font-size: 1.2em;  
+            background-color: rgba(255, 255, 255, 0.8);  
+            padding: 5px 10px;  
+            border-radius: 5px;  
+            white-space: nowrap;  
+        }  
+        .out-of-stock h3 {  
+            text-decoration: line-through;  
+        }  
+        .stars {  
+            display: flex;  
+            justify-content: center;  
+            margin-top: 10px;  
+        }  
+        .star {  
+            font-size: 1.5em;  
+            color: #ddd;  
+            cursor: pointer;  
+        }  
+        .star.filled {  
+            color: #ffc107;  
+        }  
+        .product-overlay-image {  
+            max-width: 100%;  
+            height: auto;  
+            margin-bottom: 15px;  
+            border-radius: 8px;  
+        }  
+        #read-reviews-button {  
+            margin-top: 5px;  
+            padding: 5px 10px;  
+            font-size: 0.9em;  
+            background-color: #f0f0f0;  
+            border: 1px solid #ccc;  
+            color: #555;  
+        }  
+        #my-purchases-list li, #reviews-list li {  
+            text-align: left;  
+            background-color: #f9f9f9;  
+            border: 1px solid #eee;  
+            padding: 10px;  
+            margin-bottom: 10px;  
+            border-radius: 5px;  
+            display: flex;  
+            flex-direction: column;  
+        }  
+        #my-purchases-list-container {  
+            max-height: 300px;  
+            overflow-y: auto;  
+        }  
+        #my-purchases-list button {  
+            width: auto;  
+            margin-top: 5px;  
+            padding: 5px 10px;  
+            font-size: 0.9em;  
+        }  
+        .status-badge {  
+            display: inline-block;  
+            padding: 2px 8px;  
+            border-radius: 12px;  
+            color: white;  
+            font-size: 0.8em;  
+            margin-top: 5px;  
+        }  
+        .status-badge.in-progress { background-color: #2c3e50; }  
+        .status-badge.delivered { background-color: #27ae60; }  
+        .status-badge.rejected { background-color: #c0392b; }  
+        .status-badge.return-pending { background-color: #f39c12; }  
+        .status-badge.return-accepted { background-color: #16a085; }  
+        .status-badge.return-rejected { background-color: #e74c3c; }  
+    </style>  
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>  
-<body>  <header>  
+<body>  
+<header>  
     <h1 id="store-title">Willkommen im Mousecity Store</h1>  
     <button id="my-purchases-button">Meine Käufe</button>  
 </header>  
-  
 <div id="category-buttons"></div>  
+<main><div id="product-container"></div></main>  
 
-
-<main>  
-    <div id="product-container"></div>  
-</main>  
-
-
+<!-- Overlays -->
 <div id="product-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <img id="product-overlay-image" class="product-overlay-image" src="" alt="Produktbild">  
         <h2 id="product-name"></h2>  
@@ -358,26 +316,21 @@
         <p id="product-price"></p>  
         <p id="product-delivery"></p>  
         <small id="product-stock"></small>  
-          
         <button id="read-reviews-button">Bewertungen lesen</button>  
         <button id="buy-button">Jetzt kaufen</button>  
     </div>  
 </div>  
-  
+
 <div id="reviews-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2 id="reviews-product-name"></h2>  
         <ul id="reviews-list"></ul>  
     </div>  
 </div>  
-  
+
 <div id="review-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2 id="review-product-name"></h2>  
         <h4>Schreibe eine Bewertung</h4>  
@@ -394,21 +347,15 @@
 </div>  
 
 <div id="account-select-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2 id="account-select-title">Benutzerkonto auswählen:</h2>  
-        <div id="account-list-container">  
-            <div id="account-list"></div>  
-        </div>  
+        <div id="account-list-container"><div id="account-list"></div></div>  
     </div>  
 </div>  
-  
+
 <div id="code-entry-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2>Sicherheitscode eingeben</h2>  
         <input type="tel" id="security-code-input" placeholder="Sicherheitscode">  
@@ -416,11 +363,9 @@
         <p id="error-message" class="error-message"></p>  
     </div>  
 </div>  
-  
+
 <div id="my-purchases-code-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2>Sicherheitscode eingeben</h2>  
         <input type="tel" id="my-purchases-code-input" placeholder="Sicherheitscode">  
@@ -430,21 +375,15 @@
 </div>  
 
 <div id="my-purchases-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2>Meine Käufe</h2>  
-        <div id="my-purchases-list-container">  
-            <ul id="my-purchases-list"></ul>  
-        </div>  
+        <div id="my-purchases-list-container"><ul id="my-purchases-list"></ul></div>  
     </div>  
 </div>  
-  
+
 <div id="return-request-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2>Rücksendung anfragen</h2>  
         <p>Geben Sie den Grund für die Rücksendung an:</p>  
@@ -453,11 +392,8 @@
     </div>  
 </div>  
 
-
 <div id="success-overlay" class="overlay hidden">  
-    <div class="close-button-container">  
-        <button class="close-overlay">×</button>  
-    </div>  
+    <div class="close-button-container"><button class="close-overlay">×</button></div>  
     <div class="overlay-content">  
         <h2>Kauf erfolgreich!</h2>  
         <p id="success-message"></p>  
@@ -558,11 +494,7 @@
         const fullStars = Math.floor(rating);  
         let starsHtml = '';  
         for(let i = 0; i < 5; i++) {  
-            if (i < fullStars) {  
-                starsHtml += '⭐';  
-            } else {  
-                starsHtml += '☆';  
-            }  
+            starsHtml += i < fullStars ? '⭐' : '☆';  
         }  
         return starsHtml;  
     };  
@@ -599,28 +531,22 @@
             });  
             categoryButtonsContainer.appendChild(categoryButton);  
         });  
-          
         filterProducts('all');  
     };  
 
     const filterProducts = (categoryId) => {  
         productContainer.innerHTML = '';  
         let productsToDisplay = Object.values(allProducts).map(p => p.product);  
-          
         if (categoryId !== 'all') {  
             productsToDisplay = productsToDisplay.filter(product => product.kategorie === categoryId);  
         }  
-          
         productsToDisplay.sort((a, b) => a.preis - b.preis);  
 
         productsToDisplay.forEach(product => {  
             const productItem = document.createElement('div');  
             productItem.className = 'product-item';  
             productItem.dataset.productId = product.id;  
-
-            if (product.stock <= 0) {  
-                productItem.classList.add('out-of-stock');  
-            }  
+            if (product.stock <= 0) productItem.classList.add('out-of-stock');  
 
             const reviewsForProduct = Object.values(allReviews).filter(review => review.productId === product.id);  
             const totalRating = reviewsForProduct.reduce((sum, review) => sum + review.rating, 0);  
@@ -630,15 +556,11 @@
             productItem.innerHTML = `  
                 ${product.image ? `<img src="${product.image}" alt="${product.name}">` : ''}  
                 <h3>${product.name}</h3>  
-                <div class="rating">  
-                    <div class="stars">${renderStars(roundedRating)}</div>  
-                    (${reviewsForProduct.length})  
-                </div>  
+                <div class="rating"><div class="stars">${renderStars(roundedRating)}</div> (${reviewsForProduct.length})</div>  
                 <p class="price">${product.preis} Mausdollar</p>  
                 <p class="delivery-info">24 Stunden Lieferung</p>  
                 <button class="order-button">Bestellen</button>  
             `;  
-              
             productItem.querySelector('.order-button').addEventListener('click', (e) => {  
                 e.stopPropagation();  
                 if (product.stock > 0) {  
@@ -653,23 +575,18 @@
     const loadProducts = () => {  
         const productsRef = dbPunkte.ref('shopartikel');  
         const reviewsRef = dbPunkte.ref('bewertungen');  
-
         Promise.all([productsRef.once('value'), reviewsRef.once('value')])  
             .then(([productsSnapshot, reviewsSnapshot]) => {  
                 const products = productsSnapshot.val() || {};  
                 const reviews = reviewsSnapshot.val() || {};  
                 allProducts = {};  
                 allReviews = reviews;  
-
                 Object.keys(products).forEach(key => {  
                     allProducts[key] = { product: {id: key, ...products[key]}, reviews: reviews };  
                 });  
-
                 loadCategories();  
             })  
-            .catch(error => {  
-                console.error("Fehler beim Laden der Produkte oder Bewertungen:", error);  
-            });  
+            .catch(error => console.error("Fehler beim Laden der Produkte oder Bewertungen:", error));  
     };  
 
     const showProductOverlay = (product) => {  
@@ -683,7 +600,6 @@
         const totalRating = reviewsForProduct.reduce((sum, review) => sum + review.rating, 0);  
         const averageRating = reviewsForProduct.length > 0 ? totalRating / reviewsForProduct.length : 0;  
         const roundedRating = Math.round(averageRating);  
-
         productRatingDisplay.innerHTML = `<div class="rating"><div class="stars">${renderStars(roundedRating)}</div> (${reviewsForProduct.length})</div>`;  
           
         if (product.image) {  
@@ -692,15 +608,8 @@
         } else {  
             productOverlayImage.style.display = 'none';  
         }  
-
-        if (product.stock > 0) {  
-            buyButton.disabled = false;  
-            buyButton.textContent = 'Jetzt kaufen';  
-        } else {  
-            buyButton.disabled = true;  
-            buyButton.textContent = 'Momentan nicht verfügbar';  
-        }  
-          
+        buyButton.disabled = !(product.stock > 0);  
+        buyButton.textContent = product.stock > 0 ? 'Jetzt kaufen' : 'Momentan nicht verfügbar';  
         readReviewsButton.dataset.productId = product.id;  
         productOverlay.classList.remove('hidden');  
     };  
@@ -717,17 +626,11 @@
         const product = Object.values(allProducts).find(p => p.product.id === productId)?.product;  
         reviewsList.innerHTML = '';  
         reviewsProductName.textContent = `Bewertungen für ${product.name}`;  
-          
         const reviewsForProduct = Object.values(allReviews).filter(review => review.productId === productId);  
-
         if (reviewsForProduct.length > 0) {  
             reviewsForProduct.forEach(review => {  
                 const li = document.createElement('li');  
-                li.innerHTML = `  
-                    <strong>${renderStars(review.rating)}</strong><br>  
-                    <em>"${review.comment}"</em><br>  
-                    <small>von ${review.userName} am ${new Date(review.date).toLocaleDateString()}</small>  
-                `;  
+                li.innerHTML = `<strong>${renderStars(review.rating)}</strong><br><em>"${review.comment}"</em><br><small>von ${review.userName} am ${new Date(review.date).toLocaleDateString()}</small>`;  
                 reviewsList.appendChild(li);  
             });  
         } else {  
@@ -741,7 +644,7 @@
         loadUserAccountsForPurchase();  
     });  
 
-    // Meine Käufe Logik  
+    // Meine Käufe  
     myPurchasesButton.addEventListener('click', () => {  
         hideAllOverlays();  
         accountSelectTitle.textContent = 'Benutzerkonto auswählen:';  
@@ -754,7 +657,6 @@
             myPurchasesErrorMessage.textContent = 'Bitte Sicherheitscode eingeben.';  
             return;  
         }  
-
         const codeRef = dbGesamt.ref(`kinder/${selectedUser.name}/code`);  
         codeRef.once('value', snapshot => {  
             const correctCode = snapshot.val();  
@@ -770,102 +672,66 @@
     const loadPurchases = (userName) => {  
         myPurchasesList.innerHTML = '';  
         const ordersRef = dbPunkte.ref('bestellungen');  
-
-        ordersRef.once('value')  
-            .then(ordersSnapshot => {  
-                allOrders = ordersSnapshot.val() || {};  
-
-                const userPurchases = Object.keys(allOrders)  
-                    .filter(key => allOrders[key].name === userName)  
-                    .map(key => ({ id: key, ...allOrders[key] }));  
-
-                const userReviews = Object.values(allReviews).filter(review => review.userName === userName);  
-
-                if (userPurchases.length > 0) {  
-                    userPurchases.forEach(purchase => {  
-                        const li = document.createElement('li');  
-                          
-                        const hasRated = userReviews.some(review => review.productName === purchase.artikel);  
-                          
-                        const returnStatus = purchase.returnStatus || 'keine Anfrage';  
-                        const orderStatus = purchase.status || 'wird geliefert';  
-                        let returnStatusBadge = '';  
-                        let orderStatusBadge = '';  
-                        let showReturnButton = true;  
-                          
-                        switch(orderStatus) {  
-                            case 'wird geliefert':  
-                                orderStatusBadge = `<span class="status-badge in-progress">Wird geliefert</span>`;  
-                                showReturnButton = false;  
-                                break;  
-                            case 'Produkt geliefert':  
-                                orderStatusBadge = `<span class="status-badge delivered">Geliefert</span>`;  
-                                break;  
-                            case 'Kauf abgelehnt':  
-                                orderStatusBadge = `<span class="status-badge rejected">Kauf abgelehnt</span>`;  
-                                showReturnButton = false;  
-                                break;  
+        ordersRef.once('value').then(ordersSnapshot => {  
+            allOrders = ordersSnapshot.val() || {};  
+            const userPurchases = Object.keys(allOrders)  
+                .filter(key => allOrders[key].name === userName)  
+                .map(key => ({ id: key, ...allOrders[key] }));  
+            const userReviews = Object.values(allReviews).filter(review => review.userName === userName);  
+            if (userPurchases.length > 0) {  
+                userPurchases.forEach(purchase => {  
+                    const li = document.createElement('li');  
+                    const hasRated = userReviews.some(review => review.productName === purchase.artikel);  
+                    const returnStatus = purchase.returnStatus || 'keine Anfrage';  
+                    const orderStatus = purchase.status || 'wird geliefert';  
+                    let returnStatusBadge = '';  
+                    let orderStatusBadge = '';  
+                    let showReturnButton = true;  
+                    switch(orderStatus) {  
+                        case 'wird geliefert': orderStatusBadge = `<span class="status-badge in-progress">Wird geliefert</span>`; showReturnButton = false; break;  
+                        case 'Produkt geliefert': orderStatusBadge = `<span class="status-badge delivered">Geliefert</span>`; break;  
+                        case 'Kauf abgelehnt': orderStatusBadge = `<span class="status-badge rejected">Kauf abgelehnt</span>`; showReturnButton = false; break;  
+                    }  
+                    if (returnStatus !== 'keine Anfrage') {  
+                        switch(returnStatus) {  
+                            case 'in Bearbeitung': returnStatusBadge = `<span class="status-badge return-pending">Rücksendung: in Bearbeitung</span>`; showReturnButton = false; break;  
+                            case 'angenommen': returnStatusBadge = `<span class="status-badge return-accepted">Rücksendung: angenommen</span>`; showReturnButton = false; break;  
+                            case 'abgelehnt': returnStatusBadge = `<span class="status-badge return-rejected">Rücksendung: abgelehnt</span>`; showReturnButton = false; break;  
                         }  
-                          
-                        if (returnStatus !== 'keine Anfrage') {  
-                            switch(returnStatus) {  
-                                case 'in Bearbeitung':  
-                                    returnStatusBadge = `<span class="status-badge return-pending">Rücksendung: in Bearbeitung</span>`;  
-                                    showReturnButton = false;  
-                                    break;  
-                                case 'angenommen':  
-                                    returnStatusBadge = `<span class="status-badge return-accepted">Rücksendung: angenommen</span>`;  
-                                    showReturnButton = false;  
-                                    break;  
-                                case 'abgelehnt':  
-                                    returnStatusBadge = `<span class="status-badge return-rejected">Rücksendung: abgelehnt</span>`;  
-                                    showReturnButton = false;  
-                                    break;  
-                            }  
-                        }  
-                          
-                        li.innerHTML = `  
-                            <span><strong>Produkt:</strong> ${purchase.artikel}</span>  
-                            <span><strong>Kaufdatum:</strong> ${new Date(purchase.kaufdatum).toLocaleDateString()}</span>  
-                            <span><strong>Gezahlter Preis:</strong> ${purchase.gezahlterPreis} Mausdollar</span>  
-                            ${orderStatusBadge}  
-                            ${returnStatusBadge}  
-                        `;  
-                          
-                        if (orderStatus === 'Produkt geliefert' && !hasRated) {  
-                            const rateButton = document.createElement('button');  
-                            rateButton.textContent = 'Bewerten';  
-                            rateButton.addEventListener('click', () => {  
-                                showReviewOverlayForPurchase(purchase.artikel);  
-                            });  
-                            li.appendChild(rateButton);  
-                        } else if (hasRated) {  
-                            const deleteReviewButton = document.createElement('button');  
-                            deleteReviewButton.textContent = 'Bewertung löschen';  
-                            deleteReviewButton.style.backgroundColor = 'red';  
-                            deleteReviewButton.style.borderColor = 'darkred';  
-                            deleteReviewButton.addEventListener('click', () => {  
-                                deleteReview(purchase.artikel, userName);  
-                            });  
-                            li.appendChild(deleteReviewButton);  
-                        }  
-                          
-                        if (showReturnButton) {  
-                            const returnButton = document.createElement('button');  
-                            returnButton.textContent = 'Rücksendung anfragen';  
-                            returnButton.addEventListener('click', () => {  
-                                showReturnRequestOverlay(purchase);  
-                            });  
-                            li.appendChild(returnButton);  
-                        }  
-
-                        myPurchasesList.appendChild(li);  
-                    });  
-                } else {  
-                    myPurchasesList.innerHTML = '<li>Sie haben noch keine Produkte gekauft.</li>';  
-                }  
-                myPurchasesOverlay.classList.remove('hidden');  
-            });  
+                    }  
+                    li.innerHTML = `
+                        <span><strong>Produkt:</strong> ${purchase.artikel}</span>
+                        <span><strong>Kaufdatum:</strong> ${new Date(purchase.kaufdatum).toLocaleDateString()}</span>
+                        <span><strong>Gezahlter Preis:</strong> ${purchase.gezahlterPreis} Mausdollar</span>
+                        ${orderStatusBadge}
+                        ${returnStatusBadge}
+                    `;
+                    if (orderStatus === 'Produkt geliefert' && !hasRated) {
+                        const rateButton = document.createElement('button');
+                        rateButton.textContent = 'Bewerten';
+                        rateButton.addEventListener('click', () => { showReviewOverlayForPurchase(purchase.artikel); });
+                        li.appendChild(rateButton);
+                    } else if (hasRated) {
+                        const deleteReviewButton = document.createElement('button');
+                        deleteReviewButton.textContent = 'Bewertung löschen';
+                        deleteReviewButton.style.backgroundColor = 'red';
+                        deleteReviewButton.style.borderColor = 'darkred';
+                        deleteReviewButton.addEventListener('click', () => { deleteReview(purchase.artikel, userName); });
+                        li.appendChild(deleteReviewButton);
+                    }
+                    if (showReturnButton) {
+                        const returnButton = document.createElement('button');
+                        returnButton.textContent = 'Rücksendung anfragen';
+                        returnButton.addEventListener('click', () => { showReturnRequestOverlay(purchase); });
+                        li.appendChild(returnButton);
+                    }
+                    myPurchasesList.appendChild(li);
+                });  
+            } else {  
+                myPurchasesList.innerHTML = '<li>Sie haben noch keine Produkte gekauft.</li>';  
+            }  
+            myPurchasesOverlay.classList.remove('hidden');  
+        });  
     };  
       
     const deleteReview = (productName, userName) => {  
@@ -875,17 +741,9 @@
             if (reviews) {  
                 const reviewKey = Object.keys(reviews).find(key => reviews[key].productName === productName);  
                 if (reviewKey) {  
-                    dbPunkte.ref(`bewertungen/${reviewKey}`).remove()  
-                        .then(() => {  
-                            alert('Bewertung erfolgreich gelöscht!');  
-                            hideAllOverlays();  
-                            loadProducts();  
-                            loadPurchases(userName);  
-                        })  
-                        .catch(error => {  
-                            console.error("Fehler beim Löschen der Bewertung:", error);  
-                            alert('Fehler beim Löschen der Bewertung.');  
-                        });  
+                    dbPunkte.ref(`bewertungen/${reviewKey}`).remove()
+                        .then(() => { alert('Bewertung erfolgreich gelöscht!'); hideAllOverlays(); loadProducts(); loadPurchases(userName); })
+                        .catch(error => { console.error("Fehler beim Löschen der Bewertung:", error); alert('Fehler beim Löschen der Bewertung.'); });
                 }  
             }  
         });  
@@ -911,11 +769,7 @@
 
     submitReturnRequestButton.addEventListener('click', () => {  
         const reason = returnReasonInput.value.trim();  
-        if (!reason) {  
-            alert('Bitte geben Sie einen Grund für die Rücksendung an.');  
-            return;  
-        }  
-
+        if (!reason) { alert('Bitte geben Sie einen Grund für die Rücksendung an.'); return; }  
         const returnRequestRef = dbPunkte.ref('ruecksendeanfragen').push();  
         returnRequestRef.set({  
             orderId: selectedOrder.id,  
@@ -939,16 +793,8 @@
     submitReviewButton.addEventListener('click', () => {  
         const comment = reviewCommentInput.value.trim();  
         const productId = selectedProduct.id;  
-
-        if (selectedRating === 0) {  
-            alert('Bitte wähle eine Stern-Bewertung aus.');  
-            return;  
-        }  
-        if (!comment) {  
-            alert('Bitte gib einen Kommentar ein.');  
-            return;  
-        }  
-
+        if (selectedRating === 0) { alert('Bitte wähle eine Stern-Bewertung aus.'); return; }  
+        if (!comment) { alert('Bitte gib einen Kommentar ein.'); return; }  
         const newReviewRef = dbPunkte.ref('bewertungen').push();  
         newReviewRef.set({  
             productId: productId,  
@@ -972,36 +818,24 @@
         if (e.target.classList.contains('star')) {  
             selectedRating = parseInt(e.target.dataset.value);  
             document.querySelectorAll('#new-review-stars .star').forEach(star => {  
-                if (parseInt(star.dataset.value) <= selectedRating) {  
-                    star.classList.add('filled');  
-                } else {  
-                    star.classList.remove('filled');  
-                }  
+                star.classList.toggle('filled', parseInt(star.dataset.value) <= selectedRating);  
             });  
         }  
     });  
-
 
     const loadUserAccountsForPurchase = () => {  
         accountSelectTitle.textContent = 'Benutzerkonto auswählen:';  
         accountList.innerHTML = '';  
         const kinderRef = dbPunkte.ref('kinder');  
         const auslandskontenRef = dbPunkte.ref('auslandskonten');  
-
         Promise.all([kinderRef.once('value'), auslandskontenRef.once('value')])  
             .then(([kinderSnapshot, auslandskontenSnapshot]) => {  
                 const accounts = {};  
                 const kinder = kinderSnapshot.val() || {};  
-                Object.keys(kinder).forEach(name => {  
-                    accounts[name] = { ...kinder[name], type: 'kinder' };  
-                });  
+                Object.keys(kinder).forEach(name => { accounts[name] = { ...kinder[name], type: 'kinder' }; });  
                 const auslandskonten = auslandskontenSnapshot.val() || {};  
-                Object.keys(auslandskonten).forEach(name => {  
-                    accounts[name] = { ...auslandskonten[name], type: 'auslandskonten' };  
-                });  
-                  
+                Object.keys(auslandskonten).forEach(name => { accounts[name] = { ...auslandskonten[name], type: 'auslandskonten' }; });  
                 const sortedAccountNames = Object.keys(accounts).sort();  
-
                 if (sortedAccountNames.length > 0) {  
                     sortedAccountNames.forEach(name => {  
                         const account = accounts[name];  
@@ -1020,10 +854,7 @@
                     alert('Keine Konten gefunden.');  
                 }  
             })  
-            .catch(error => {  
-                console.error("Fehler beim Laden der Konten:", error);  
-                alert('Fehler beim Laden der Konten.');  
-            });  
+            .catch(error => { console.error("Fehler beim Laden der Konten:", error); alert('Fehler beim Laden der Konten.'); });  
     };  
 
     const loadUserAccountsForPurchases = () => {  
@@ -1031,21 +862,14 @@
         accountList.innerHTML = '';  
         const kinderRef = dbPunkte.ref('kinder');  
         const auslandskontenRef = dbPunkte.ref('auslandskonten');  
-
         Promise.all([kinderRef.once('value'), auslandskontenRef.once('value')])  
             .then(([kinderSnapshot, auslandskontenSnapshot]) => {  
                 const accounts = {};  
                 const kinder = kinderSnapshot.val() || {};  
-                Object.keys(kinder).forEach(name => {  
-                    accounts[name] = { ...kinder[name], type: 'kinder' };  
-                });  
+                Object.keys(kinder).forEach(name => { accounts[name] = { ...kinder[name], type: 'kinder' }; });  
                 const auslandskonten = auslandskontenSnapshot.val() || {};  
-                Object.keys(auslandskonten).forEach(name => {  
-                    accounts[name] = { ...auslandskonten[name], type: 'auslandskonten' };  
-                });  
-                  
+                Object.keys(auslandskonten).forEach(name => { accounts[name] = { ...auslandskonten[name], type: 'auslandskonten' }; });  
                 const sortedAccountNames = Object.keys(accounts).sort();  
-
                 if (sortedAccountNames.length > 0) {  
                     sortedAccountNames.forEach(name => {  
                         const accountButton = document.createElement('button');  
@@ -1063,20 +887,12 @@
                     alert('Keine Konten gefunden.');  
                 }  
             })  
-            .catch(error => {  
-                console.error("Fehler beim Laden der Konten:", error);  
-                alert('Fehler beim Laden der Konten.');  
-            });  
+            .catch(error => { console.error("Fehler beim Laden der Konten:", error); alert('Fehler beim Laden der Konten.'); });  
     };  
-
 
     confirmBuyButton.addEventListener('click', () => {  
         const enteredCode = securityCodeInput.value;  
-        if (!enteredCode) {  
-            errorMessage.textContent = 'Bitte Sicherheitscode eingeben.';  
-            return;  
-        }  
-
+        if (!enteredCode) { errorMessage.textContent = 'Bitte Sicherheitscode eingeben.'; return; }  
         const codeRef = dbGesamt.ref(`kinder/${selectedUser.name}/code`);  
         codeRef.once('value', snapshot => {  
             const correctCode = snapshot.val();  
@@ -1084,33 +900,26 @@
                 if (selectedUser.punkte >= selectedProduct.preis) {  
                     const newPoints = selectedUser.punkte - selectedProduct.preis;  
                     const newStock = selectedProduct.stock - 1;  
-
                     const updates = {};  
                     updates[`${selectedUser.type}/${selectedUser.name}/punkte`] = newPoints;  
                     updates[`shopartikel/${selectedProduct.id}/stock`] = newStock;  
-                      
-                    dbPunkte.ref().update(updates)  
-                        .then(() => {  
-                            const newOrderRef = dbPunkte.ref('bestellungen').push();  
-                            newOrderRef.set({  
-                                name: selectedUser.name,  
-                                artikel: selectedProduct.name,  
-                                lieferzeit: selectedProduct.lieferzeit,  
-                                kaufdatum: new Date().toISOString(),  
-                                gezahlterPreis: selectedProduct.preis,  
-                                status: 'wird geliefert',  
-                                userType: selectedUser.type  
-                            }).then(() => {  
-                                codeEntryOverlay.classList.add('hidden');  
-                                successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;  
-                                successOverlay.classList.remove('hidden');  
-                                loadProducts();  
-                            });  
-                        })  
-                        .catch(error => {  
-                            console.error("Fehler beim Kauf:", error);  
-                            errorMessage.textContent = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';  
+                    dbPunkte.ref().update(updates).then(() => {  
+                        const newOrderRef = dbPunkte.ref('bestellungen').push();  
+                        newOrderRef.set({  
+                            name: selectedUser.name,  
+                            artikel: selectedProduct.name,  
+                            lieferzeit: selectedProduct.lieferzeit,  
+                            kaufdatum: new Date().toISOString(),  
+                            gezahlterPreis: selectedProduct.preis,  
+                            status: 'wird geliefert',  
+                            userType: selectedUser.type  
+                        }).then(() => {  
+                            codeEntryOverlay.classList.add('hidden');  
+                            successMessage.textContent = `Vielen Dank für deinen Einkauf! Die Lieferung von ${selectedProduct.name} dauert ${selectedProduct.lieferzeit}.`;  
+                            successOverlay.classList.remove('hidden');  
+                            loadProducts();  
                         });  
+                    }).catch(error => { console.error("Fehler beim Kauf:", error); errorMessage.textContent = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.'; });  
                 } else {  
                     errorMessage.textContent = 'Zu wenige Punkte für diesen Kauf.';  
                 }  
@@ -1123,5 +932,15 @@
     document.addEventListener('DOMContentLoaded', loadProducts);  
 </script>
 
+<!-- Service Worker Registrierung -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      // Pfad ggf. anpassen: bei GitHub Pages unter /DEINREPO/service-worker.js
+      navigator.serviceWorker.register('service-worker.js').catch(console.error);
+    });
+  }
+</script>
+
 </body>  
-</html>  
+</html>
