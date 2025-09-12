@@ -58,11 +58,28 @@
         .status-badge.return-pending{background-color:#f39c12}
         .status-badge.return-accepted{background-color:#16a085}
         .status-badge.return-rejected{background-color:#e74c3c}
+
+        /* --- NEU: System-Lock Popup + Countdown --- */
+        #system-lock{position:fixed;inset:0;background:rgba(0,0,0,.85);color:#fff;display:none;align-items:center;justify-content:center;z-index:2000}
+        #system-lock .box{max-width:820px;margin:0 16px;background:#111;border:2px solid #ef4444;border-radius:14px;padding:24px 28px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+        #system-lock h2{margin:0 0 12px 0;font-size:36px;line-height:1.2}
+        #system-lock p{margin:6px 0 0 0;font-size:20px;opacity:.95}
+        #system-lock .count{font-weight:700}
     </style>  
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>  
 <body>
+
+    <!-- NEU: System-Lock Overlay -->
+    <div id="system-lock" role="dialog" aria-live="assertive" aria-modal="true">
+      <div class="box">
+        <h2>Der Shop ist nicht verfügbar</h2>
+        <p>Das Terminal wurde gesperrt. Du wirst zur Startseite weitergeleitet.</p>
+        <p>Weiterleitung in <span class="count" id="lock-count">5</span> Sekunden …</p>
+      </div>
+    </div>
+
     <header>
         <h1 id="store-title">Willkommen im Mousecity Store</h1>
         <button id="my-purchases-button">Meine Käufe</button>
@@ -178,6 +195,54 @@
     const dbPunkte=appPunkte.database();
     const dbGesamt=appGesamt.database();
 
+    /* NEU: Systemmodus überwachen und sperren */
+    (function setupSystemLock(){
+      const lockEl=document.getElementById('system-lock');
+      const countEl=document.getElementById('lock-count');
+      const REDIRECT_URL="https://frederickoeller1207.github.io/terminal/";
+      let lockActive=false, tId=null, redirectIn=5;
+
+      // Eingaben blockieren, wenn Lock aktiv
+      const capture=(e)=>{ if(lockActive){ e.stopImmediatePropagation(); e.preventDefault(); } };
+      ["click","touchstart","pointerdown","keydown","submit"].forEach(t=>document.addEventListener(t,capture,true));
+
+      const startCountdown=()=>{
+        redirectIn=5;
+        countEl.textContent=String(redirectIn);
+        if(tId) clearInterval(tId);
+        tId=setInterval(()=>{
+          redirectIn-=1;
+          countEl.textContent=String(Math.max(0,redirectIn));
+          if(redirectIn<=0){
+            clearInterval(tId);
+            location.replace(REDIRECT_URL);
+          }
+        },1000);
+      };
+
+      const showLock=()=>{
+        if(lockActive) return;
+        lockActive=true;
+        lockEl.style.display='flex';
+        startCountdown();
+      };
+
+      const hideLock=()=>{
+        lockActive=false;
+        lockEl.style.display='none';
+        if(tId) clearInterval(tId);
+      };
+
+      // Abo auf systemmode/state
+      dbGesamt.ref("systemmode/state").on("value",snap=>{
+        const mode = snap && snap.val() && snap.val().value ? snap.val().value : "green";
+        if(mode==="green"){ hideLock(); }
+        else { showLock(); } // gelb oder rot
+      });
+    })();
+</script>
+
+<script>
     // Immer-Freitag
     const daysUntilNextFriday=()=>{const t=new Date();const d=t.getDay();const f=5;return (f-d+7)%7};
     const fridayDeliveryTextShort=()=>`Lieferung in ${daysUntilNextFriday()} Tagen`;
